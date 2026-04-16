@@ -43,13 +43,71 @@
           >
             Rellenar todo
           </UButton>
-          <UButton 
-            color="neutral"
-            icon="lucide:file-text"
-            @click="generateReport"
+        </div>
+      </div>
+
+      <div class="mb-8 grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div class="lg:col-span-2 rounded-2xl border border-gray-100 bg-gradient-to-br from-slate-50/90 to-white p-5 shadow-sm">
+          <h3 class="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+            <UIcon name="lucide:clipboard-list" class="w-4 h-4 text-gray-400" />
+            Resumen de inventario
+          </h3>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div>
+              <p class="text-xs text-gray-500">
+                Ocupación
+              </p>
+              <p class="text-lg font-bold text-gray-900 tabular-nums">
+                {{ machineReportStats.fillPct }}%
+              </p>
+              <p class="text-xs text-gray-400 mt-0.5">
+                {{ machineReportStats.units }} / {{ machineReportStats.cap }} uds.
+              </p>
+            </div>
+            <div>
+              <p class="text-xs text-gray-500">
+                Efectivo registrado
+              </p>
+              <p class="text-lg font-bold text-gray-900 tabular-nums">
+                ${{ Number(machine.cash_collected).toFixed(2) }}
+              </p>
+            </div>
+            <div>
+              <p class="text-xs text-gray-500">
+                Ranuras vacías
+              </p>
+              <p class="text-lg font-bold tabular-nums" :class="machineReportStats.empty > 0 ? 'text-amber-700' : 'text-gray-900'">
+                {{ machineReportStats.empty }}
+              </p>
+            </div>
+            <div>
+              <p class="text-xs text-gray-500">
+                Stock bajo (&lt;20%)
+              </p>
+              <p class="text-lg font-bold tabular-nums" :class="machineReportStats.low > 0 ? 'text-amber-700' : 'text-gray-900'">
+                {{ machineReportStats.low }}
+              </p>
+            </div>
+          </div>
+        </div>
+        <div class="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm flex flex-col justify-between gap-4">
+          <div>
+            <h3 class="text-sm font-semibold text-gray-900">
+              Informe PDF
+            </h3>
+            <p class="text-xs text-gray-500 mt-1 leading-relaxed">
+              Detalle por ranura (posición, producto, cantidades y alertas) más efectivo de esta máquina.
+            </p>
+          </div>
+          <UButton
+            block
+            icon="lucide:download"
+            color="primary"
+            variant="soft"
             :loading="isGeneratingReport"
+            @click="generateReport"
           >
-            Reporte PDF
+            Descargar inventario
           </UButton>
         </div>
       </div>
@@ -369,7 +427,7 @@
 
 <script setup lang="ts">
 import type { Machine, Slot, Product } from '~/types'
-import { generateInventoryReport } from '~/utils/pdfReport'
+import { generateMachineInventoryPdf } from '~/utils/pdfReport'
 
 const route = useRoute()
 const {
@@ -456,6 +514,24 @@ const filteredMachineCatalog = computed(() => {
 const hasAnyProductSlots = computed(() =>
   slots.value.some(s => s.product_id != null)
 )
+
+const machineReportStats = computed(() => {
+  const sl = slots.value
+  if (sl.length === 0) {
+    return { units: 0, cap: 0, empty: 0, low: 0, fillPct: 0 }
+  }
+  const units = sl.reduce((a, s) => a + s.quantity, 0)
+  const cap = sl.reduce((a, s) => a + s.max_quantity, 0)
+  const empty = sl.filter(s => s.quantity === 0).length
+  const low = sl.filter(s => s.quantity > 0 && s.quantity <= s.max_quantity * 0.2).length
+  return {
+    units,
+    cap,
+    empty,
+    low,
+    fillPct: cap ? Math.round((units / cap) * 100) : 0
+  }
+})
 
 const productsNotInMachineItems = computed(() => {
   return allProducts.value
@@ -756,7 +832,8 @@ const generateReport = () => {
   if (!machine.value) return
   isGeneratingReport.value = true
   try {
-    generateInventoryReport([{ machine: machine.value, slots: slots.value }])
+    generateMachineInventoryPdf(machine.value, slots.value)
+    toast.add({ title: 'PDF descargado', description: `Inventario de ${machine.value.name}`, color: 'success', icon: 'lucide:check' })
   } catch (e) {
     console.error('Error generating PDF', e)
     toast.add({ title: 'Hubo un error al generar el PDF', color: 'error', icon: 'lucide:x' })
