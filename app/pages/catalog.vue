@@ -52,8 +52,13 @@
     </div>
 
     <UModal v-model="isModalOpen">
-      <div class="p-6">
-        <h3 class="text-lg font-semibold text-gray-900 mb-4">{{ editingProduct ? 'Editar Producto' : 'Nuevo Producto' }}</h3>
+      <UCard :ui="{ ring: '', divide: 'divide-y divide-gray-100' }">
+        <template #header>
+          <div class="flex items-center justify-between">
+            <h3 class="text-lg font-semibold text-gray-900">{{ editingProduct ? 'Editar Producto' : 'Nuevo Producto' }}</h3>
+            <UButton color="gray" variant="ghost" icon="lucide:x" class="-my-1" @click="isModalOpen = false" />
+          </div>
+        </template>
         
         <form @submit.prevent="saveProduct" class="space-y-4">
           <UFormGroup label="Nombre">
@@ -83,7 +88,7 @@
             <UButton type="submit" color="black" :loading="isSaving">Guardar</UButton>
           </div>
         </form>
-      </div>
+      </UCard>
     </UModal>
   </div>
 </template>
@@ -147,11 +152,19 @@ const openModal = (product?: Product) => {
 
 const saveProduct = async () => {
   isSaving.value = true
+
+  const payload = {
+    ...form.value,
+    purchase_price: Number(form.value.purchase_price) || 0,
+    sale_price: Number(form.value.sale_price) || 0,
+    default_max: Number(form.value.default_max) || 1
+  }
+
   try {
     if (editingProduct.value) {
-      await updateProduct(editingProduct.value.id, form.value)
+      await updateProduct(editingProduct.value.id, payload)
     } else {
-      await createProduct(form.value)
+      await createProduct(payload)
     }
     isModalOpen.value = false
     await loadProducts()

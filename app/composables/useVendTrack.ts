@@ -1,7 +1,7 @@
 import type { Machine, Slot, Product, StockLog } from '~/types'
 
 export const useVendTrack = () => {
-  const supabase = useSupabaseClient()
+  const supabase = useSupabaseClient<any>()
 
   const fetchMachines = async () => {
     const { data, error } = await supabase
@@ -187,6 +187,35 @@ export const useVendTrack = () => {
     if (error) throw error
   }
 
+  const addCoffeeSlot = async (machineId: string) => {
+    const { data, error } = await supabase
+      .from('slots')
+      .insert({
+        machine_id: machineId,
+        row: null,
+        col: null,
+        quantity: 0,
+        max_quantity: 10
+      })
+      .select(`
+        *,
+        product:product_id (*)
+      `)
+      .single()
+      
+    if (error) throw error
+    return data as Slot
+  }
+
+  const deleteSlot = async (slotId: string) => {
+    const { error } = await supabase
+      .from('slots')
+      .delete()
+      .eq('id', slotId)
+      
+    if (error) throw error
+  }
+
   return {
     fetchMachines,
     fetchMachine,
@@ -201,6 +230,8 @@ export const useVendTrack = () => {
     updateProduct,
     fetchStockLogs,
     updateMachineDimensions,
-    updateSlotMaxQuantity
+    updateSlotMaxQuantity,
+    addCoffeeSlot,
+    deleteSlot
   }
 }

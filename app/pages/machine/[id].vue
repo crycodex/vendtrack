@@ -38,7 +38,7 @@
             v-if="machine.type === 'vending'"
             color="white"
             icon="lucide:package-plus"
-            @click="handleRefillAll"
+            @click="isRefillModalOpen = true"
           >
             Rellenar Todo
           </UButton>
@@ -85,15 +85,20 @@
               />
             </div>
             <div v-else>
-              <div class="mb-4">
+              <div class="mb-4 flex items-center justify-between">
                 <h3 class="text-lg font-medium text-gray-900">Insumos</h3>
+                <UButton icon="lucide:plus" color="black" size="xs" :loading="isAddingSlot" @click="handleAddCoffeeSlot">Nuevo Módulo</UButton>
               </div>
               <CoffeeList 
                 :slots="slots" 
                 :products="products"
                 @update:qty="handleUpdateQty" 
                 @update:product="handleUpdateProduct"
+                @delete:slot="handleDeleteSlot"
               />
+              <div v-if="slots.length === 0" class="text-center py-6 text-gray-500 bg-gray-50 border border-dashed rounded-lg">
+                No hay contenedores de insumos. Agrega uno nuevo.
+              </div>
             </div>
           </div>
 
@@ -151,6 +156,29 @@
         </div>
       </div>
     </div>
+
+    <UModal v-model="isRefillModalOpen">
+      <UCard :ui="{ ring: '', divide: 'divide-y divide-gray-100' }">
+        <template #header>
+          <div class="flex items-center justify-between">
+            <h3 class="text-lg font-semibold text-gray-900">¿Rellenar Todo?</h3>
+            <UButton color="gray" variant="ghost" icon="lucide:x" class="-my-1" @click="isRefillModalOpen = false" />
+          </div>
+        </template>
+        
+        <div class="p-4 text-center">
+          <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <UIcon name="lucide:package-plus" class="w-8 h-8 text-blue-600" />
+          </div>
+          <p class="text-gray-500 mb-6 text-sm">Esta acción rellenará todas las ranuras al límite de su capacidad configurada. Esto genera un registro masivo en el historial.</p>
+          <div class="flex gap-3 justify-center">
+            <UButton color="gray" variant="soft" @click="isRefillModalOpen = false">Cancelar</UButton>
+            <UButton color="blue" :loading="isRefilling" @click="executeRefill">Sí, Rellenar Todo</UButton>
+          </div>
+        </div>
+      </UCard>
+    </UModal>
+
   </div>
 </template>
 
@@ -159,7 +187,7 @@ import type { Machine, Slot, Product } from '~/types'
 import { generateInventoryReport } from '~/utils/pdfReport'
 
 const route = useRoute()
-const { fetchMachine, fetchSlotsForMachine, updateSlotQuantity, refillAllSlots, updateCashCollected, fetchProducts, updateMachineName, updateSlotProduct, updateMachineDimensions } = useVendTrack()
+const { fetchMachine, fetchSlotsForMachine, updateSlotQuantity, refillAllSlots, updateCashCollected, fetchProducts, updateMachineName, updateSlotProduct, updateMachineDimensions, addCoffeeSlot, deleteSlot } = useVendTrack()
 
 const machineId = route.params.id as string
 const pending = ref(true)
@@ -178,6 +206,10 @@ const tempName = ref('')
 const tempRows = ref(1)
 const tempCols = ref(1)
 const isSavingDimensions = ref(false)
+
+const isAddingSlot = ref(false)
+const isRefillModalOpen = ref(false)
+const isRefilling = ref(false)
 
 const loadData = async () => {
   pending.value = true
@@ -261,13 +293,15 @@ const saveDimensions = async () => {
 }
 
 const handleUpdateQty = async (id: string, newQty: number, prevQty: number) => {
+  const idx = slots.value.findIndex(s => s.id === id)
+  if (idx > -1) {
+    slots.value[idx].quantity = newQty
+  }
+
   try {
     await updateSlotQuantity(id, newQty, prevQty)
-    const idx = slots.value.findIndex(s => s.id === id)
-    if (idx > -1) {
-      slots.value[idx].quantity = newQty
-    }
   } catch (err) {
+    if (idx > -1) slots.value[idx].quantity = prevQty // revert
     console.error('Error updating quantity:', err)
     alert("Error al actualizar inventario")
   }
@@ -287,14 +321,49 @@ const handleUpdateProduct = async (id: string, productId: string | null) => {
   }
 }
 
-const handleRefillAll = async () => {
-  if (!confirm('¿Seguro que deseas rellenar todas las ranuras al máximo?')) return
+const handleAddCoffeeSlot = async () => {
+  isAddingSlot.value = true
+  try {
+    const newSlot = await addCoffeeSlot(machineId)
+    slots.value.push(newSlot)
+  } catch(err) {
+    console.error(err)
+    alert("Error creando insumo")
+  } finally {
+    isAddingSlot.value = false
+  }
+}
+
+const handleDeleteSlot = async (id: string) => {
+  if (!confirm('¿Estás seguro de quitar de la máquina este conteo de insumo?')) return
+  try {
+    await deleteSlot(id)
+    slots.value = slots.value.filter(s => s.id !== id)
+  } catch (e) {
+    console.error(e)
+    alert("Hubo un error borrando el insumo.")
+  }
+}
+
+const executeRefill = async () => {
+  isRefilling.value = true
+
+  // Optimistic UI update
+  slots.value.forEach(s => {
+    if (s.quantity < s.max_quantity) {
+      s.quantity = s.max_quantity
+    }
+  })
+
   try {
     await refillAllSlots(machineId, slots.value)
     slots.value = await fetchSlotsForMachine(machineId)
+    isRefillModalOpen.value = false
   } catch (err) {
     console.error('Error refilling:', err)
     alert('Hubo un error al rellenar las ranuras')
+  } finally {
+    isRefilling.value = false
   }
 }
 

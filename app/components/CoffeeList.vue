@@ -50,10 +50,20 @@
         <span v-else class="text-sm text-gray-500">Capacidad Máxima: {{ slot.max_quantity }}</span>
       </div>
       
-      <div class="flex items-center bg-white border border-gray-200 rounded-lg p-1.5 ml-auto shadow-sm">
-        <UButton icon="lucide:minus" size="sm" variant="ghost" color="gray" @click="decSlot(slot)" :disabled="slot.quantity <= 0" />
-        <span class="font-bold text-lg w-12 text-center text-gray-900">{{ slot.quantity }}</span>
-        <UButton icon="lucide:plus" size="sm" variant="ghost" color="gray" @click="incSlot(slot)" :disabled="slot.quantity >= slot.max_quantity" />
+      <div class="flex items-center gap-3 ml-auto">
+        <div class="flex items-center bg-white border border-gray-200 rounded-lg p-1.5 shadow-sm">
+          <UButton icon="lucide:minus" size="sm" variant="ghost" color="gray" @click="decSlot(slot)" :disabled="slot.quantity <= 0" />
+          <span class="font-bold text-lg w-12 text-center text-gray-900">{{ slot.quantity }}</span>
+          <UButton icon="lucide:plus" size="sm" variant="ghost" color="gray" @click="incSlot(slot)" :disabled="slot.quantity >= slot.max_quantity" />
+        </div>
+        <UButton 
+          icon="lucide:trash-2" 
+          size="sm" 
+          variant="soft" 
+          color="red" 
+          title="Eliminar este módulo"
+          @click="emit('delete:slot', slot.id)" 
+        />
       </div>
     </div>
   </div>
@@ -70,6 +80,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'update:qty', id: string, newQty: number, prevQty: number): void
   (e: 'update:product', id: string, productId: string | null): void
+  (e: 'delete:slot', id: string): void
 }>()
 
 const { updateSlotMaxQuantity } = useVendTrack()
