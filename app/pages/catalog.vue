@@ -147,12 +147,13 @@
               <div class="flex flex-col sm:flex-row gap-2">
                 <USelectMenu
                   v-model="form.category_id"
-                  :options="categorySelectOptions"
-                  value-attribute="value"
-                  option-attribute="label"
+                  :items="categorySelectOptions"
+                  value-key="value"
+                  label-key="label"
+                  :search-input="{ placeholder: 'Buscar categoría…' }"
                   placeholder="Sin categoría"
                   size="lg"
-                  class="flex-1"
+                  class="flex-1 min-w-0"
                 />
                 <UButton color="neutral" variant="soft" icon="lucide:folder-plus" size="lg" @click="isCategoryModalOpen = true">
                   Nueva

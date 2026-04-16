@@ -69,12 +69,15 @@
               <div class="flex flex-col sm:flex-row flex-wrap gap-2 w-full md:w-auto">
                 <USelectMenu
                   v-model="productToAddId"
-                  :options="productsNotInMachineOptions"
-                  value-attribute="value"
-                  option-attribute="label"
-                  placeholder="Añadir producto del catálogo global…"
+                  :items="productsNotInMachineItems"
+                  value-key="value"
+                  label-key="label"
+                  description-key="description"
+                  :filter-fields="['label', 'description']"
+                  :search-input="{ placeholder: 'Buscar producto o SKU…' }"
+                  placeholder="Añadir del catálogo global…"
                   size="sm"
-                  class="min-w-[220px] flex-1"
+                  class="min-w-[200px] flex-1"
                 />
                 <UButton size="sm" color="primary" :disabled="!productToAddId" :loading="isAddingCatalogProduct" @click="handleAddCatalogProduct">
                   Añadir
@@ -403,12 +406,13 @@ const isDeletingSlot = ref(false)
 
 const catalogIds = computed(() => new Set(machineCatalog.value.map(p => p.id)))
 
-const productsNotInMachineOptions = computed(() => {
+const productsNotInMachineItems = computed(() => {
   return allProducts.value
     .filter(p => !catalogIds.value.has(p.id))
     .map(p => ({
       value: p.id,
-      label: p.category?.name ? `${p.name} · ${p.category.name}` : p.name
+      label: p.category?.name ? `${p.name} · ${p.category.name}` : p.name,
+      description: p.sku ? `SKU ${p.sku}` : undefined
     }))
 })
 

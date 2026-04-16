@@ -23,14 +23,17 @@
     <template v-else>
       <div class="mt-4 w-full space-y-3" @click.stop>
         
-        <USelectMenu 
-          v-model="tempProductId" 
-          :options="productOptions"
-          value-attribute="value"
-          option-attribute="label"
-          placeholder="Asignar producto..."
+        <USelectMenu
+          v-model="tempProductId"
+          :items="productMenuItems"
+          value-key="value"
+          label-key="label"
+          description-key="description"
+          :filter-fields="['label', 'description']"
+          :search-input="{ placeholder: 'Buscar por nombre o SKU…' }"
+          placeholder="Asignar producto del catálogo…"
           size="sm"
-          class="w-full relative z-50"
+          class="w-full min-w-[200px] max-w-full relative z-50"
         />
 
         <div class="flex flex-col items-center gap-1 bg-gray-50 p-2 rounded-md border border-gray-100">
@@ -85,13 +88,20 @@ const statusColor = computed(() => {
   return 'bg-gray-50'
 })
 
-const productOptions = computed(() => {
-  const opts = [{ label: 'Vacío', value: '' }]
-  props.products.forEach((p) => {
+/** Items para USelectMenu v4: `items` + búsqueda en label/description (nombre, categoría, SKU) */
+const productMenuItems = computed(() => {
+  const rows: { label: string, value: string, description?: string }[] = [
+    { label: 'Vacío', value: '', description: 'Sin producto asignado' }
+  ]
+  for (const p of props.products) {
     const tag = p.category?.name ? ` · ${p.category.name}` : ''
-    opts.push({ label: `${p.name}${tag}`, value: p.id })
-  })
-  return opts
+    rows.push({
+      label: `${p.name}${tag}`,
+      value: p.id,
+      description: p.sku ? `SKU ${p.sku}` : undefined
+    })
+  }
+  return rows
 })
 
 const startEditing = () => {

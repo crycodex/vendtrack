@@ -9,15 +9,18 @@
       <div class="flex-1 w-full max-w-sm">
         <div class="flex items-center gap-2 mb-2">
           <h4 class="font-medium text-gray-900" v-if="!isExtEditing(slot.id)">{{ slot.product?.name || 'Desconocido' }}</h4>
-          <USelectMenu 
+          <USelectMenu
             v-else
-            v-model="getTempExt(slot.id).productId" 
-            :options="productOptions"
-            value-attribute="value"
-            option-attribute="label"
-            placeholder="Asignar producto..."
+            v-model="getTempExt(slot.id).productId"
+            :items="productMenuItems"
+            value-key="value"
+            label-key="label"
+            description-key="description"
+            :filter-fields="['label', 'description']"
+            :search-input="{ placeholder: 'Buscar por nombre o SKU…' }"
+            placeholder="Asignar producto del catálogo…"
             size="sm"
-            class="flex-1"
+            class="flex-1 min-w-[200px]"
           />
           <UButton 
             v-if="!isExtEditing(slot.id)" 
@@ -92,13 +95,19 @@ const extEditingFor = ref<string | null>(null)
 const isSavingExt = ref(false)
 const tempExt = ref<Record<string, { productId: string, maxQty: number }>>({})
 
-const productOptions = computed(() => {
-  const opts = [{ label: 'Vacío', value: '' }]
-  props.products.forEach((p) => {
+const productMenuItems = computed(() => {
+  const rows: { label: string, value: string, description?: string }[] = [
+    { label: 'Vacío', value: '', description: 'Sin producto asignado' }
+  ]
+  for (const p of props.products) {
     const tag = p.category?.name ? ` · ${p.category.name}` : ''
-    opts.push({ label: `${p.name}${tag}`, value: p.id })
-  })
-  return opts
+    rows.push({
+      label: `${p.name}${tag}`,
+      value: p.id,
+      description: p.sku ? `SKU ${p.sku}` : undefined
+    })
+  }
+  return rows
 })
 
 const statusColor = (slot: Slot) => {
