@@ -1,64 +1,125 @@
-# Nuxt Starter Template
+# VendTrack
 
-[![Nuxt UI](https://img.shields.io/badge/Made%20with-Nuxt%20UI-00DC82?logo=nuxt&labelColor=020420)](https://ui.nuxt.com)
+Aplicación web para **inventario de máquinas expendedoras y de café**: catálogo global de productos, catálogo por máquina, grilla de ranuras, historial de stock y reportes exportables a PDF.
 
-Use this template to get started with [Nuxt UI](https://ui.nuxt.com) quickly.
+## Stack
 
-- [Live demo](https://starter-template.nuxt.dev/)
-- [Documentation](https://ui.nuxt.com/docs/getting-started/installation/nuxt)
+| Tecnología | Uso |
+|------------|-----|
+| [Nuxt 4](https://nuxt.com/) | Framework Vue, rutas en `app/pages/` |
+| [Nuxt UI v4](https://ui.nuxt.com/) | Componentes (`UButton`, `UInput`, `USelectMenu`, `UModal`, …) |
+| [Supabase](https://supabase.com/) | Postgres + API (`@nuxtjs/supabase`) |
+| [Tailwind CSS v4](https://tailwindcss.com/) | Estilos vía `@import "@nuxt/ui"` en `app/assets/css/main.css` |
+| [jsPDF](https://github.com/parallax/jsPDF) + [jspdf-autotable](https://github.com/simonbengtsson/jsPDF-AutoTable) | Reportes PDF en `app/utils/pdfReport.ts` |
 
-<a href="https://starter-template.nuxt.dev/" target="_blank">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://ui.nuxt.com/assets/templates/nuxt/starter-dark.png">
-    <source media="(prefers-color-scheme: light)" srcset="https://ui.nuxt.com/assets/templates/nuxt/starter-light.png">
-    <img alt="Nuxt Starter Template" src="https://ui.nuxt.com/assets/templates/nuxt/starter-light.png" width="830" height="466">
-  </picture>
-</a>
+## Requisitos
 
-> The starter template for Vue is on https://github.com/nuxt-ui-templates/starter-vue.
+- Node.js 20+ (recomendado 22+)
+- [pnpm](https://pnpm.io/) 10+
+- Proyecto Supabase con las migraciones aplicadas (ver más abajo)
 
-## Quick Start
+## Configuración
 
-```bash [Terminal]
-npm create nuxt@latest -- -t ui
+1. Clona el repositorio e instala dependencias:
+
+   ```bash
+   pnpm install
+   ```
+
+2. Crea un archivo `.env` en la raíz con las credenciales del proyecto Supabase (Dashboard → Settings → API):
+
+   ```env
+   SUPABASE_URL="https://<ref>.supabase.co"
+   SUPABASE_KEY="<anon_public_key>"
+   ```
+
+   No subas `.env` al repositorio.
+
+3. Aplica el esquema en la base de datos:
+
+   - Con [Supabase CLI](https://supabase.com/docs/guides/cli): `supabase db push` o ejecuta los SQL en `supabase/migrations/` desde el SQL Editor del panel.
+
+   El archivo `supabase/schema.sql` es **referencia idempotente** (útil en entornos vacíos); en proyectos reales la fuente de verdad son las **migraciones**.
+
+## Scripts
+
+| Comando | Descripción |
+|---------|-------------|
+| `pnpm dev` | Servidor de desarrollo (http://localhost:3000) |
+| `pnpm build` | Build de producción |
+| `pnpm preview` | Vista previa del build |
+| `pnpm typecheck` | Comprobación TypeScript (`nuxi typecheck`) |
+| `pnpm lint` | ESLint |
+
+## Modelo de datos (resumen)
+
+- **machines**: nombre, tipo (`vending` | `coffee`), filas/columnas (vending), efectivo recaudado.
+- **categories**: nombre único, orden, **emoji** opcional (icono visual y filtros).
+- **products**: SKU único, precios compra/venta, `category_id`, capacidad por defecto por ranura.
+- **machine_products**: qué productos del catálogo global puede usar cada máquina en sus ranuras.
+- **slots**: ranura por máquina (fila/columna en vending), producto, cantidad y máximo.
+- **stock_logs**: cambios de cantidad por ranura (base para ventas inferidas en el dashboard).
+
+Las migraciones en `supabase/migrations/` crean/amplian tablas e índices; alinear cambios nuevos ahí y, si quieres, actualizar `supabase/schema.sql`.
+
+## Funcionalidades principales
+
+### Dashboard (`/`)
+
+- Pestaña **Máquinas**: tarjetas con ocupación, efectivo y alertas; búsqueda por nombre.
+- **Inventario general**: stock agregado por producto, KPIs, búsqueda, filtros; PDF agregado y PDF detalle por máquina.
+- **Reporte de ganancias**: totales a partir de reducciones de stock, tabla con máquina y producto, búsqueda, exportación PDF.
+
+### Catálogo global (`/catalog`)
+
+- CRUD de productos, categorías con **emoji** elegido entre una lista predefinida (`app/utils/categoryEmojiPresets.ts`).
+- Tabla con búsqueda y **filtro por icono de categoría** (los ítems del combobox no usan `value` vacío: ver `app/utils/comboSentinel.ts`).
+
+### Máquina (`/machine/[id]`)
+
+- Nombre editable, efectivo, dimensiones de grilla (vending).
+- **Catálogo de la máquina**: añadir o quitar productos del catálogo global; “Importar todos”.
+- **Grilla**: asignación de producto y cantidades; **emoji de categoría** visible en cada celda cuando existe.
+- Café: lista de insumos (`CoffeeList`) con la misma lógica de catálogo por máquina.
+- Acciones: rellenar ranuras con producto al máximo (solo vending), PDF de inventario de esa máquina, búsqueda en tablas locales.
+
+### Reportes PDF
+
+- `generateInventoryReport` / `generateMachineInventoryPdf`: detalle por ranura.
+- `generateAggregatedInventoryPdf`: inventario global agregado.
+- `generateProfitsReportPdf`: historial de movimientos de venta inferidos.
+
+## Detalles de UI / convenciones
+
+- **Tema claro forzado** para Nuxt UI (`nuxt.config.ts` → `colorMode`), alineado con el layout en `app/app.vue`.
+- **Combobox (Roka / `USelectMenu`)**: no usar `value: ''` en ítems; usar centinela `COMBO_EMPTY_VALUE` en `comboSentinel.ts` y mapear a `null` al guardar.
+- Tipos compartidos en `app/types/index.ts`.
+
+## Estructura relevante
+
+```
+app/
+  app.vue              # Layout + UApp
+  pages/
+    index.vue          # Dashboard
+    catalog.vue        # Catálogo global
+    machine/[id].vue   # Detalle de máquina
+  components/
+    SlotCell.vue       # Celda de grilla vending
+    VendingGrid.vue
+    CoffeeList.vue
+    MachineCard.vue
+  composables/
+    useVendTrack.ts    # Acceso Supabase y lógica de negocio
+  utils/
+    pdfReport.ts
+    comboSentinel.ts
+    categoryEmojiPresets.ts
+supabase/
+  migrations/
+  schema.sql           # Referencia idempotente
 ```
 
-## Deploy your own
+## Licencia
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-name=starter&repository-url=https%3A%2F%2Fgithub.com%2Fnuxt-ui-templates%2Fstarter&demo-image=https%3A%2F%2Fui.nuxt.com%2Fassets%2Ftemplates%2Fnuxt%2Fstarter-dark.png&demo-url=https%3A%2F%2Fstarter-template.nuxt.dev%2F&demo-title=Nuxt%20Starter%20Template&demo-description=A%20minimal%20template%20to%20get%20started%20with%20Nuxt%20UI.)
-
-## Setup
-
-Make sure to install the dependencies:
-
-```bash
-pnpm install
-```
-
-## Development Server
-
-Start the development server on `http://localhost:3000`:
-
-```bash
-pnpm dev
-```
-
-## Production
-
-Build the application for production:
-
-```bash
-pnpm build
-```
-
-Locally preview production build:
-
-```bash
-pnpm preview
-```
-
-Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
-
-## Renovate integration
-
-Install [Renovate GitHub app](https://github.com/apps/renovate/installations/select_target) on your repository and you are good to go.
+[MIT](LICENSE) © 2026 VendTrack contributors.
