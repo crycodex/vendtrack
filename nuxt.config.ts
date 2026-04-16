@@ -30,6 +30,11 @@ export default defineNuxtConfig({
     storageKey: 'vendtrack-color-mode'
   },
 
+  /** Evita ERR_MODULE_NOT_FOUND de tslib/modules/index.js en SSR (Vercel / Nitro). */
+  build: {
+    transpile: ['tslib']
+  },
+
   routeRules: {
     '/': { prerender: false }
   },

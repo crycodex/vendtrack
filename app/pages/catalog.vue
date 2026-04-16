@@ -3,7 +3,8 @@
     <div class="mb-4">
       <NuxtLink
         to="/"
-        class="text-sm font-medium text-gray-500 hover:text-gray-900 inline-flex items-center transition-colors">
+        class="text-sm font-medium text-gray-500 hover:text-gray-900 inline-flex items-center transition-colors"
+      >
         <UIcon
           name="lucide:arrow-left"
           class="w-4 h-4 mr-1"
@@ -22,17 +23,31 @@
           Bóveda central de productos e insumos disponibles para tus máquinas.
         </p>
       </div>
-      <UButton color="primary" size="lg" icon="lucide:plus-circle" @click="openModal()">
+      <UButton
+        color="primary"
+        size="lg"
+        icon="lucide:plus-circle"
+        @click="openModal()"
+      >
         Crear Producto
       </UButton>
     </div>
 
-    <div v-if="pending" class="flex justify-center py-12">
-      <UIcon name="lucide:loader-2" class="w-8 h-8 animate-spin text-gray-400" />
+    <div
+      v-if="pending"
+      class="flex justify-center py-12"
+    >
+      <UIcon
+        name="lucide:loader-2"
+        class="w-8 h-8 animate-spin text-gray-400"
+      />
     </div>
 
     <!-- Product Table -->
-    <div v-else class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+    <div
+      v-else
+      class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden"
+    >
       <div class="flex flex-col gap-3 px-5 py-4 border-b border-gray-100 bg-gray-50/80">
         <div class="flex flex-col sm:flex-row sm:items-center gap-3 flex-wrap">
           <UInput
@@ -84,11 +99,18 @@
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-50">
-            <tr v-for="product in filteredProducts" :key="product.id" class="hover:bg-gray-50/50 transition-colors">
+            <tr
+              v-for="product in filteredProducts"
+              :key="product.id"
+              class="hover:bg-gray-50/50 transition-colors"
+            >
               <td class="py-4 px-5">
                 <div class="flex items-center gap-3">
                   <div class="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center border border-gray-200">
-                    <UIcon name="lucide:package" class="w-5 h-5 text-gray-400" />
+                    <UIcon
+                      name="lucide:package"
+                      class="w-5 h-5 text-gray-400"
+                    />
                   </div>
                   <span class="font-semibold text-gray-900">{{ product.name }}</span>
                 </div>
@@ -101,10 +123,17 @@
                   v-if="product.category?.name"
                   class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-gray-100 text-xs font-medium"
                 >
-                  <span v-if="product.category?.emoji" class="text-base leading-none" aria-hidden="true">{{ product.category.emoji }}</span>
+                  <span
+                    v-if="product.category?.emoji"
+                    class="text-base leading-none"
+                    aria-hidden="true"
+                  >{{ product.category.emoji }}</span>
                   <span>{{ product.category.name }}</span>
                 </span>
-                <span v-else class="text-gray-400">—</span>
+                <span
+                  v-else
+                  class="text-gray-400"
+                >—</span>
               </td>
               <td class="py-4 px-5 text-sm font-medium text-gray-500">
                 ${{ Number(product.purchase_price).toFixed(2) }}
@@ -117,14 +146,34 @@
               </td>
               <td class="py-4 px-5 text-right">
                 <div class="flex items-center justify-end gap-2">
-                  <UButton color="info" variant="soft" icon="lucide:pencil" size="sm" @click="openModal(product)" title="Editar" />
-                  <UButton color="error" variant="soft" icon="lucide:trash-2" size="sm" @click="confirmDelete(product)" title="Eliminar Producto" />
+                  <UButton
+                    color="info"
+                    variant="soft"
+                    icon="lucide:pencil"
+                    size="sm"
+                    title="Editar"
+                    @click="openModal(product)"
+                  />
+                  <UButton
+                    color="error"
+                    variant="soft"
+                    icon="lucide:trash-2"
+                    size="sm"
+                    title="Eliminar Producto"
+                    @click="confirmDelete(product)"
+                  />
                 </div>
               </td>
             </tr>
             <tr v-if="products.length === 0">
-              <td colspan="7" class="py-16 text-center">
-                <UIcon name="lucide:box" class="w-12 h-12 text-gray-300 mx-auto mb-3" />
+              <td
+                colspan="7"
+                class="py-16 text-center"
+              >
+                <UIcon
+                  name="lucide:box"
+                  class="w-12 h-12 text-gray-300 mx-auto mb-3"
+                />
                 <p class="text-gray-500 font-medium">
                   El catálogo está vacío.
                 </p>
@@ -134,8 +183,14 @@
               </td>
             </tr>
             <tr v-else-if="filteredProducts.length === 0">
-              <td colspan="7" class="py-14 text-center text-gray-500">
-                <UIcon name="lucide:search-x" class="w-10 h-10 text-gray-300 mx-auto mb-2" />
+              <td
+                colspan="7"
+                class="py-14 text-center text-gray-500"
+              >
+                <UIcon
+                  name="lucide:search-x"
+                  class="w-10 h-10 text-gray-300 mx-auto mb-2"
+                />
                 <p class="font-medium">
                   Ningún producto coincide con «{{ catalogSearch.trim() }}».
                 </p>
@@ -156,20 +211,38 @@
           <template #header>
             <div class="flex items-center justify-between">
               <h3 class="text-xl font-bold text-gray-900 flex items-center gap-2">
-                <UIcon :name="editingProduct ? 'lucide:pencil' : 'lucide:plus'" class="w-5 h-5 text-gray-400" />
+                <UIcon
+                  :name="editingProduct ? 'lucide:pencil' : 'lucide:plus'"
+                  class="w-5 h-5 text-gray-400"
+                />
                 {{ editingProduct ? 'Editar Producto' : 'Nuevo Producto' }}
               </h3>
-              <UButton color="neutral" variant="ghost" icon="lucide:x" class="-my-1" @click="isModalOpen = false" />
+              <UButton
+                color="neutral"
+                variant="ghost"
+                icon="lucide:x"
+                class="-my-1"
+                @click="isModalOpen = false"
+              />
             </div>
           </template>
 
-          <form @submit.prevent="saveProduct" class="space-y-5 p-2">
+          <form
+            class="space-y-5 p-2"
+            @submit.prevent="saveProduct"
+          >
             <UFormField
               label="Nombre del producto"
               description="Nombre que verás en el catálogo y en las máquinas."
               required
             >
-              <UInput v-model="form.name" required placeholder="Ej. Coca Cola 600ml o Café Grano" size="lg" icon="lucide:box" />
+              <UInput
+                v-model="form.name"
+                required
+                placeholder="Ej. Coca Cola 600ml o Café Grano"
+                size="lg"
+                icon="lucide:box"
+              />
             </UFormField>
 
             <UFormField
@@ -177,7 +250,13 @@
               description="Identificador único (no se repite entre productos)."
               required
             >
-              <UInput v-model="form.sku" required placeholder="BEB-001" size="lg" icon="lucide:barcode" />
+              <UInput
+                v-model="form.sku"
+                required
+                placeholder="BEB-001"
+                size="lg"
+                icon="lucide:barcode"
+              />
             </UFormField>
 
             <UFormField
@@ -195,7 +274,13 @@
                   size="lg"
                   class="flex-1 min-w-0"
                 />
-                <UButton color="neutral" variant="soft" icon="lucide:folder-plus" size="lg" @click="isCategoryModalOpen = true">
+                <UButton
+                  color="neutral"
+                  variant="soft"
+                  icon="lucide:folder-plus"
+                  size="lg"
+                  @click="isCategoryModalOpen = true"
+                >
                   Nueva
                 </UButton>
               </div>
@@ -207,7 +292,14 @@
                 description="Lo que te cuesta cada unidad al comprar o producir."
                 required
               >
-                <UInput v-model.number="form.purchase_price" type="number" step="0.01" min="0" required size="lg">
+                <UInput
+                  v-model.number="form.purchase_price"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  required
+                  size="lg"
+                >
                   <template #leading>
                     <span class="text-muted font-medium">$</span>
                   </template>
@@ -219,7 +311,14 @@
                 description="Precio al que vendes cada unidad al cliente."
                 required
               >
-                <UInput v-model.number="form.sale_price" type="number" step="0.01" min="0" required size="lg">
+                <UInput
+                  v-model.number="form.sale_price"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  required
+                  size="lg"
+                >
                   <template #leading>
                     <span class="text-muted font-medium">$</span>
                   </template>
@@ -233,14 +332,33 @@
               description="Unidades que caben habitualmente en una ranura al rellenar o al crear slots."
               required
             >
-              <UInput v-model.number="form.default_max" type="number" min="1" required size="lg" icon="lucide:layers" />
+              <UInput
+                v-model.number="form.default_max"
+                type="number"
+                min="1"
+                required
+                size="lg"
+                icon="lucide:layers"
+              />
             </UFormField>
 
             <div class="pt-4 flex justify-end gap-3 border-t border-gray-100 mt-6">
-              <UButton color="neutral" variant="soft" @click="isModalOpen = false" size="lg" class="px-6">
+              <UButton
+                color="neutral"
+                variant="soft"
+                size="lg"
+                class="px-6"
+                @click="isModalOpen = false"
+              >
                 Cancelar
               </UButton>
-              <UButton type="submit" color="primary" :loading="isSaving" size="lg" class="px-8">
+              <UButton
+                type="submit"
+                color="primary"
+                :loading="isSaving"
+                size="lg"
+                class="px-8"
+              >
                 {{ editingProduct ? 'Actualizar' : 'Guardar' }}
               </UButton>
             </div>
@@ -256,17 +374,29 @@
           <template #header>
             <div class="flex items-center justify-between">
               <h3 class="text-xl font-bold text-gray-900 flex items-center gap-2">
-                <UIcon name="lucide:trash-2" class="w-5 h-5 text-gray-400" />
+                <UIcon
+                  name="lucide:trash-2"
+                  class="w-5 h-5 text-gray-400"
+                />
                 Confirmar eliminación
               </h3>
-              <UButton color="neutral" variant="ghost" icon="lucide:x" class="-my-1" @click="isDeleteModalOpen = false" />
+              <UButton
+                color="neutral"
+                variant="ghost"
+                icon="lucide:x"
+                class="-my-1"
+                @click="isDeleteModalOpen = false"
+              />
             </div>
           </template>
 
           <div class="p-4">
             <div class="flex gap-4">
               <div class="w-12 h-12 rounded-xl bg-red-50 border border-red-100 flex items-center justify-center shrink-0">
-                <UIcon name="lucide:alert-triangle" class="w-6 h-6 text-red-600" />
+                <UIcon
+                  name="lucide:alert-triangle"
+                  class="w-6 h-6 text-red-600"
+                />
               </div>
               <div class="min-w-0">
                 <p class="font-semibold text-gray-900">
@@ -281,10 +411,23 @@
             </div>
 
             <div class="pt-5 mt-6 border-t border-gray-100 flex justify-end gap-3">
-              <UButton color="neutral" variant="soft" @click="isDeleteModalOpen = false" :disabled="isDeleting" size="lg" class="px-6">
+              <UButton
+                color="neutral"
+                variant="soft"
+                :disabled="isDeleting"
+                size="lg"
+                class="px-6"
+                @click="isDeleteModalOpen = false"
+              >
                 Cancelar
               </UButton>
-              <UButton color="error" @click="performDelete" :loading="isDeleting" size="lg" class="px-8">
+              <UButton
+                color="error"
+                :loading="isDeleting"
+                size="lg"
+                class="px-8"
+                @click="performDelete"
+              >
                 Eliminar
               </UButton>
             </div>
@@ -302,7 +445,13 @@
               <h3 class="text-lg font-semibold text-gray-900">
                 Nueva categoría
               </h3>
-              <UButton color="neutral" variant="ghost" icon="lucide:x" class="-my-1" @click="isCategoryModalOpen = false" />
+              <UButton
+                color="neutral"
+                variant="ghost"
+                icon="lucide:x"
+                class="-my-1"
+                @click="isCategoryModalOpen = false"
+              />
             </div>
           </template>
           <div class="p-4 space-y-5">
@@ -315,23 +464,42 @@
                   v-for="p in CATEGORY_EMOJI_PRESETS"
                   :key="p.emoji"
                   type="button"
-                  class="flex flex-col items-center justify-center gap-0.5 rounded-xl border px-2 py-2 min-w-[4.5rem] transition-colors hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                  class="flex flex-col items-center justify-center gap-0.5 rounded-xl border px-2 py-2 min-w-18 transition-colors hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                   :class="newCategoryEmoji === p.emoji ? 'border-primary bg-primary/5 ring-1 ring-primary' : 'border-gray-200 bg-white'"
                   @click="newCategoryEmoji = p.emoji"
                 >
-                  <span class="text-2xl leading-none" aria-hidden="true">{{ p.emoji }}</span>
+                  <span
+                    class="text-2xl leading-none"
+                    aria-hidden="true"
+                  >{{ p.emoji }}</span>
                   <span class="text-[10px] text-gray-500 text-center leading-tight">{{ p.label }}</span>
                 </button>
               </div>
             </UFormField>
-            <UFormField label="Nombre" required>
-              <UInput v-model="newCategoryName" placeholder="Ej. Bebidas energéticas" size="lg" @keydown.enter.prevent="saveNewCategory" />
+            <UFormField
+              label="Nombre"
+              required
+            >
+              <UInput
+                v-model="newCategoryName"
+                placeholder="Ej. Bebidas energéticas"
+                size="lg"
+                @keydown.enter.prevent="saveNewCategory"
+              />
             </UFormField>
             <div class="flex justify-end gap-2">
-              <UButton color="neutral" variant="soft" @click="isCategoryModalOpen = false">
+              <UButton
+                color="neutral"
+                variant="soft"
+                @click="isCategoryModalOpen = false"
+              >
                 Cancelar
               </UButton>
-              <UButton color="primary" :loading="isSavingCategory" @click="saveNewCategory">
+              <UButton
+                color="primary"
+                :loading="isSavingCategory"
+                @click="saveNewCategory"
+              >
                 Crear
               </UButton>
             </div>

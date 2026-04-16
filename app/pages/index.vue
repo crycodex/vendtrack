@@ -160,7 +160,7 @@
                 ${{ totalGlobalRevenue.toFixed(2) }}
               </p>
             </div>
-            <div class="rounded-xl border border-gray-100 bg-gradient-to-br from-slate-50 to-white p-4 shadow-sm">
+            <div class="rounded-xl border border-gray-100 bg-linear-to-br from-slate-50 to-white p-4 shadow-sm">
               <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">
                 Margen potencial
               </p>
