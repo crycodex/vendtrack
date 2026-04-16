@@ -97,6 +97,41 @@
         </div>
       </div>
 
+      <div class="mb-8 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+        <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-3">
+          <h3 class="text-sm font-semibold text-gray-900 flex items-center gap-2">
+            <UIcon
+              name="lucide:sticky-note"
+              class="w-4 h-4 text-gray-400"
+            />
+            Observaciones
+          </h3>
+          <UButton
+            v-if="observationsDirty"
+            icon="lucide:save"
+            size="sm"
+            color="primary"
+            variant="soft"
+            :loading="isSavingObservations"
+            @click="saveObservations"
+          >
+            Guardar
+          </UButton>
+        </div>
+        <textarea
+          v-model="tempObservations"
+          rows="4"
+          class="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-900/10"
+          placeholder="Notas, ubicación física, incidencias, contacto del local…"
+        />
+        <p
+          v-if="observationsDirty"
+          class="text-xs text-amber-700 mt-2"
+        >
+          Cambios sin guardar.
+        </p>
+      </div>
+
       <div class="mb-8 grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div class="lg:col-span-2 rounded-2xl border border-gray-100 bg-gradient-to-br from-slate-50/90 to-white p-5 shadow-sm">
           <h3 class="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
@@ -692,6 +727,7 @@ const {
   removeMachineProduct,
   syncAllProductsToMachine,
   updateMachineName,
+  updateMachineObservations,
   updateSlotProduct,
   updateMachineDimensions,
   addCoffeeSlot,
@@ -720,6 +756,9 @@ const isGeneratingReport = ref(false)
 
 const isEditingName = ref(false)
 const tempName = ref('')
+
+const tempObservations = ref('')
+const isSavingObservations = ref(false)
 
 const tempRows = ref(1)
 const tempCols = ref(1)
@@ -766,6 +805,13 @@ const filteredMachineCatalog = computed(() => {
 const hasAnyProductSlots = computed(() =>
   slots.value.some(s => s.product_id != null)
 )
+
+const observationsDirty = computed(() => {
+  if (!machine.value) return false
+  const a = (tempObservations.value ?? '').trim()
+  const b = (machine.value.observations ?? '').trim()
+  return a !== b
+})
 
 const machineReportStats = computed(() => {
   const sl = slots.value
@@ -814,6 +860,7 @@ const loadData = async () => {
     tempCash.value = Number(m_data.cash_collected) || 0
     tempRows.value = m_data.rows || 1
     tempCols.value = m_data.columns || 1
+    tempObservations.value = m_data.observations ?? ''
   } catch (e: unknown) {
     console.error(e)
     error.value = e instanceof Error ? e : new Error(String(e))
@@ -908,6 +955,22 @@ const saveName = async () => {
   } catch (err: unknown) {
     console.error(err)
     toast.add({ title: 'No se pudo actualizar el nombre', color: 'error', icon: 'lucide:x' })
+  }
+}
+
+const saveObservations = async () => {
+  if (!machine.value) return
+  isSavingObservations.value = true
+  try {
+    const next = tempObservations.value.trim() || null
+    await updateMachineObservations(machineId, next)
+    machine.value.observations = next
+    toast.add({ title: 'Observaciones guardadas', color: 'success', icon: 'lucide:check' })
+  } catch (err: unknown) {
+    console.error(err)
+    toast.add({ title: 'No se pudieron guardar las observaciones', color: 'error', icon: 'lucide:x' })
+  } finally {
+    isSavingObservations.value = false
   }
 }
 

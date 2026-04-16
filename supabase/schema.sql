@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS machines (
     rows INT,
     columns INT,
     cash_collected NUMERIC DEFAULT 0,
+    observations TEXT,
     created_at TIMESTAMPTZ DEFAULT now()
 );
 

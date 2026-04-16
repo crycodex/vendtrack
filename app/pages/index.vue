@@ -469,7 +469,10 @@ const totalCash = computed(() => {
 const filteredMachines = computed(() => {
   const q = machineSearch.value.trim().toLowerCase()
   if (!q) return machines.value
-  return machines.value.filter(m => m.name.toLowerCase().includes(q))
+  return machines.value.filter((m) => {
+    const obs = (m.observations ?? '').toLowerCase()
+    return m.name.toLowerCase().includes(q) || obs.includes(q)
+  })
 })
 
 const globalInventory = computed(() => {

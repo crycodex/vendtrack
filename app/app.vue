@@ -13,6 +13,17 @@
               class="text-sm font-medium text-gray-500 hover:text-gray-900"
               active-class="text-gray-900 font-semibold"
             >Catálogo</NuxtLink>
+            <NuxtLink
+              to="/tutorial"
+              class="text-sm font-medium text-gray-500 hover:text-gray-900 inline-flex items-center gap-1.5"
+              active-class="text-gray-900 font-semibold"
+            >
+              <UIcon
+                name="lucide:book-open"
+                class="w-4 h-4 opacity-80"
+              />
+              Tutorial
+            </NuxtLink>
           </div>
           <div class="text-sm font-medium text-gray-500">
             Administrador

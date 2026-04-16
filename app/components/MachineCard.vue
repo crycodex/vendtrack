@@ -25,6 +25,13 @@
       </div>
     </div>
 
+    <p
+      v-if="machine.observations?.trim()"
+      class="text-sm text-gray-600 line-clamp-3 mb-4 leading-relaxed"
+    >
+      {{ machine.observations.trim() }}
+    </p>
+
     <div v-if="alerts.length > 0" class="mb-4">
       <div v-for="(alert, idx) in alerts" :key="idx" class="flex items-center text-red-600 text-sm mb-1">
         <UIcon name="lucide:alert-circle" class="w-4 h-4 mr-1.5" />

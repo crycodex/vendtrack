@@ -219,6 +219,15 @@ export const useVendTrack = () => {
     if (error) throw error
   }
 
+  const updateMachineObservations = async (machineId: string, observations: string | null) => {
+    const trimmed = observations?.trim() || null
+    const { error } = await supabase
+      .from('machines')
+      .update({ observations: trimmed })
+      .eq('id', machineId)
+    if (error) throw error
+  }
+
   const updateSlotProduct = async (slotId: string, productId: string | null) => {
     const { error } = await supabase
       .from('slots')
@@ -366,6 +375,7 @@ export const useVendTrack = () => {
     removeMachineProduct,
     syncAllProductsToMachine,
     updateMachineName,
+    updateMachineObservations,
     updateSlotProduct,
     createProduct,
     deleteProduct,

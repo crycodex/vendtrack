@@ -16,6 +16,8 @@ export interface Machine {
   rows: number | null
   columns: number | null
   cash_collected: number
+  /** Notas libres (ubicación, incidencias, etc.) */
+  observations?: string | null
   created_at: string
 }
 
