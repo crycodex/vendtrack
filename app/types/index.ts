@@ -1,5 +1,12 @@
 export type MachineType = 'vending' | 'coffee'
 
+export interface Category {
+  id: string
+  name: string
+  sort_order?: number
+  created_at?: string
+}
+
 export interface Machine {
   id: string
   name: string
@@ -17,6 +24,9 @@ export interface Product {
   default_max: number
   purchase_price: number
   sale_price: number
+  category_id: string | null
+  /** Incluido en selects con join */
+  category?: Category | null
 }
 
 export interface Slot {
@@ -27,7 +37,7 @@ export interface Slot {
   product_id: string | null
   quantity: number
   max_quantity: number
-  
+
   // Joined product data
   product?: Product | null
 }

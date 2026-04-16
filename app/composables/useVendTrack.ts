@@ -1,4 +1,9 @@
-import type { Machine, Slot, Product, StockLog } from '~/types'
+import type { Machine, Slot, Product, StockLog, Category } from '~/types'
+
+const productSelect = `
+  *,
+  category:category_id (*)
+`
 
 export const useVendTrack = () => {
   const supabase = useSupabaseClient<any>()
@@ -8,7 +13,7 @@ export const useVendTrack = () => {
       .from('machines')
       .select('*')
       .order('created_at', { ascending: true })
-    
+
     if (error) throw error
     return data as Machine[]
   }
@@ -19,7 +24,7 @@ export const useVendTrack = () => {
       .select('*')
       .eq('id', id)
       .single()
-      
+
     if (error) throw error
     return data as Machine
   }
@@ -29,10 +34,12 @@ export const useVendTrack = () => {
       .from('slots')
       .select(`
         *,
-        product:product_id (*)
+        product:product_id (
+          ${productSelect}
+        )
       `)
       .eq('machine_id', machineId)
-      
+
     if (error) throw error
     return data as Slot[]
   }
@@ -44,10 +51,9 @@ export const useVendTrack = () => {
       .from('slots')
       .update({ quantity: newQty })
       .eq('id', slotId)
-      
+
     if (updateError) throw updateError
 
-    // Insert stock log
     const { error: logError } = await supabase
       .from('stock_logs')
       .insert({
@@ -72,17 +78,111 @@ export const useVendTrack = () => {
       .from('machines')
       .update({ cash_collected: amount })
       .eq('id', machineId)
-      
+
     if (error) throw error
   }
 
+  const fetchCategories = async () => {
+    const { data, error } = await supabase
+      .from('categories')
+      .select('*')
+      .order('sort_order', { ascending: true })
+
+    if (error) throw error
+    return data as Category[]
+  }
+
+  const createCategory = async (name: string) => {
+    const { data, error } = await supabase
+      .from('categories')
+      .insert({ name: name.trim() })
+      .select()
+      .single()
+
+    if (error) throw error
+    return data as Category
+  }
+
+  /** Catálogo global (admin) */
   const fetchProducts = async () => {
     const { data, error } = await supabase
       .from('products')
-      .select('*')
-      
+      .select(productSelect)
+      .order('name', { ascending: true })
+
     if (error) throw error
     return data as Product[]
+  }
+
+  /** Productos permitidos en una máquina (para ranuras) */
+  const fetchMachineCatalog = async (machineId: string) => {
+    const { data, error } = await supabase
+      .from('machine_products')
+      .select(`
+        product:product_id (
+          ${productSelect}
+        )
+      `)
+      .eq('machine_id', machineId)
+
+    if (error) throw error
+    const rows = (data ?? []) as { product: Product | Product[] | null }[]
+    return rows
+      .map((r) => {
+        const p = r.product
+        return Array.isArray(p) ? p[0] ?? null : p
+      })
+      .filter((p): p is Product => !!p)
+  }
+
+  const addMachineProduct = async (machineId: string, productId: string) => {
+    const { error } = await supabase
+      .from('machine_products')
+      .insert({ machine_id: machineId, product_id: productId })
+
+    if (error) throw error
+  }
+
+  const removeMachineProduct = async (machineId: string, productId: string) => {
+    const { count, error: countErr } = await supabase
+      .from('slots')
+      .select('*', { count: 'exact', head: true })
+      .eq('machine_id', machineId)
+      .eq('product_id', productId)
+
+    if (countErr) throw countErr
+    if ((count ?? 0) > 0) {
+      throw new Error('Hay ranuras usando este producto. Cambia o vacía esas ranuras antes de quitarlo del catálogo de la máquina.')
+    }
+
+    const { error } = await supabase
+      .from('machine_products')
+      .delete()
+      .eq('machine_id', machineId)
+      .eq('product_id', productId)
+
+    if (error) throw error
+  }
+
+  /** Añade al catálogo de la máquina todos los productos globales que aún no estén */
+  const syncAllProductsToMachine = async (machineId: string) => {
+    const [all, linked] = await Promise.all([
+      fetchProducts(),
+      supabase.from('machine_products').select('product_id').eq('machine_id', machineId)
+    ])
+
+    if (linked.error) throw linked.error
+    const linkedIds = new Set((linked.data ?? []).map((r: { product_id: string }) => r.product_id))
+    const toAdd = all.filter(p => !linkedIds.has(p.id)).map(p => ({
+      machine_id: machineId,
+      product_id: p.id
+    }))
+
+    if (toAdd.length === 0) return 0
+
+    const { error } = await supabase.from('machine_products').insert(toAdd)
+    if (error) throw error
+    return toAdd.length
   }
 
   const updateMachineName = async (machineId: string, name: string) => {
@@ -105,7 +205,7 @@ export const useVendTrack = () => {
     const { data, error } = await supabase
       .from('products')
       .insert(product)
-      .select()
+      .select(productSelect)
       .single()
     if (error) throw error
     return data as Product
@@ -124,7 +224,7 @@ export const useVendTrack = () => {
       .from('products')
       .update(product)
       .eq('id', id)
-      .select()
+      .select(productSelect)
       .single()
     if (error) throw error
     return data as Product
@@ -137,7 +237,7 @@ export const useVendTrack = () => {
         *,
         slot:slot_id (
           machine_id,
-          product:product_id (*)
+          product:product_id (${productSelect})
         )
       `)
       .order('changed_at', { ascending: false })
@@ -207,10 +307,10 @@ export const useVendTrack = () => {
       })
       .select(`
         *,
-        product:product_id (*)
+        product:product_id (${productSelect})
       `)
       .single()
-      
+
     if (error) throw error
     return data as Slot
   }
@@ -220,7 +320,7 @@ export const useVendTrack = () => {
       .from('slots')
       .delete()
       .eq('id', slotId)
-      
+
     if (error) throw error
   }
 
@@ -231,7 +331,13 @@ export const useVendTrack = () => {
     updateSlotQuantity,
     refillAllSlots,
     updateCashCollected,
+    fetchCategories,
+    createCategory,
     fetchProducts,
+    fetchMachineCatalog,
+    addMachineProduct,
+    removeMachineProduct,
+    syncAllProductsToMachine,
     updateMachineName,
     updateSlotProduct,
     createProduct,

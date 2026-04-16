@@ -56,7 +56,90 @@
       <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
         <!-- Main Area: Grid & Local Inventory -->
         <div class="lg:col-span-3 space-y-6">
-          
+          <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+            <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-4">
+              <div>
+                <h3 class="text-lg font-medium text-gray-900">
+                  Catálogo de esta máquina
+                </h3>
+                <p class="text-sm text-gray-500 mt-1">
+                  Solo estos productos pueden asignarse a las ranuras. El catálogo global define precios y categorías; aquí eliges qué artículos ofrece esta máquina.
+                </p>
+              </div>
+              <div class="flex flex-col sm:flex-row flex-wrap gap-2 w-full md:w-auto">
+                <USelectMenu
+                  v-model="productToAddId"
+                  :options="productsNotInMachineOptions"
+                  value-attribute="value"
+                  option-attribute="label"
+                  placeholder="Añadir producto del catálogo global…"
+                  size="sm"
+                  class="min-w-[220px] flex-1"
+                />
+                <UButton size="sm" color="primary" :disabled="!productToAddId" :loading="isAddingCatalogProduct" @click="handleAddCatalogProduct">
+                  Añadir
+                </UButton>
+                <UButton size="sm" color="neutral" variant="soft" :loading="isSyncingCatalog" @click="handleSyncCatalog">
+                  Importar todos
+                </UButton>
+              </div>
+            </div>
+
+            <div v-if="machineCatalog.length === 0" class="py-10 text-center text-gray-500 bg-gray-50 border border-dashed border-gray-200 rounded-xl">
+              <UIcon name="lucide:package-search" class="w-10 h-10 text-gray-300 mx-auto mb-2" />
+              <p class="font-medium text-gray-700">
+                Aún no hay productos en el catálogo de esta máquina.
+              </p>
+              <p class="text-sm mt-1">
+                Usa «Importar todos» o el selector para añadir productos del catálogo global.
+              </p>
+            </div>
+            <div v-else class="overflow-x-auto rounded-lg border border-gray-100">
+              <table class="w-full text-left text-sm min-w-[520px]">
+                <thead>
+                  <tr class="bg-gray-50 border-b border-gray-100">
+                    <th class="py-2.5 px-3 font-medium text-gray-500">
+                      Categoría
+                    </th>
+                    <th class="py-2.5 px-3 font-medium text-gray-500">
+                      Producto
+                    </th>
+                    <th class="py-2.5 px-3 font-medium text-gray-500">
+                      SKU
+                    </th>
+                    <th class="py-2.5 px-3 font-medium text-gray-500 text-right">
+                      Quitar
+                    </th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-50">
+                  <tr v-for="p in machineCatalog" :key="p.id" class="hover:bg-gray-50/80">
+                    <td class="py-2.5 px-3 text-gray-600">
+                      <span v-if="p.category?.name" class="text-xs font-medium px-2 py-0.5 rounded-md bg-gray-100">{{ p.category.name }}</span>
+                      <span v-else class="text-gray-400">—</span>
+                    </td>
+                    <td class="py-2.5 px-3 font-medium text-gray-900">
+                      {{ p.name }}
+                    </td>
+                    <td class="py-2.5 px-3 font-mono text-gray-500">
+                      {{ p.sku }}
+                    </td>
+                    <td class="py-2.5 px-3 text-right">
+                      <UButton
+                        icon="lucide:x"
+                        size="xs"
+                        color="neutral"
+                        variant="ghost"
+                        :loading="removingCatalogProductId === p.id"
+                        @click="handleRemoveCatalogProduct(p)"
+                      />
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
           <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
             <div v-if="machine.type === 'vending'">
               <div class="mb-4 flex flex-col md:flex-row md:items-center justify-between gap-3">
@@ -79,7 +162,7 @@
               <VendingGrid 
                 :slots="slots" 
                 :columns="machine.columns || 1" 
-                :products="products"
+                :products="machineCatalog"
                 @update:qty="handleUpdateQty" 
                 @update:product="handleUpdateProduct"
               />
@@ -91,7 +174,7 @@
               </div>
               <CoffeeList 
                 :slots="slots" 
-                :products="products"
+                :products="machineCatalog"
                 @update:qty="handleUpdateQty" 
                 @update:product="handleUpdateProduct"
                 @delete:slot="handleDeleteSlot"
@@ -263,7 +346,23 @@ import type { Machine, Slot, Product } from '~/types'
 import { generateInventoryReport } from '~/utils/pdfReport'
 
 const route = useRoute()
-const { fetchMachine, fetchSlotsForMachine, updateSlotQuantity, refillAllSlots, updateCashCollected, fetchProducts, updateMachineName, updateSlotProduct, updateMachineDimensions, addCoffeeSlot, deleteSlot } = useVendTrack()
+const {
+  fetchMachine,
+  fetchSlotsForMachine,
+  updateSlotQuantity,
+  refillAllSlots,
+  updateCashCollected,
+  fetchProducts,
+  fetchMachineCatalog,
+  addMachineProduct,
+  removeMachineProduct,
+  syncAllProductsToMachine,
+  updateMachineName,
+  updateSlotProduct,
+  updateMachineDimensions,
+  addCoffeeSlot,
+  deleteSlot
+} = useVendTrack()
 const toast = useToast()
 
 const machineId = route.params.id as string
@@ -271,7 +370,15 @@ const pending = ref(true)
 const error = ref<Error | null>(null)
 const machine = ref<Machine | null>(null)
 const slots = ref<Slot[]>([])
-const products = ref<Product[]>([])
+/** Catálogo global (selector para añadir a la máquina) */
+const allProducts = ref<Product[]>([])
+/** Productos permitidos en esta máquina (ranuras) */
+const machineCatalog = ref<Product[]>([])
+
+const productToAddId = ref<string | undefined>(undefined)
+const isAddingCatalogProduct = ref(false)
+const isSyncingCatalog = ref(false)
+const removingCatalogProductId = ref<string | null>(null)
 
 const tempCash = ref<number | null>(null)
 const isUpdatingCash = ref(false)
@@ -294,25 +401,87 @@ const isDeleteSlotModalOpen = ref(false)
 const slotToDeleteId = ref<string | null>(null)
 const isDeletingSlot = ref(false)
 
+const catalogIds = computed(() => new Set(machineCatalog.value.map(p => p.id)))
+
+const productsNotInMachineOptions = computed(() => {
+  return allProducts.value
+    .filter(p => !catalogIds.value.has(p.id))
+    .map(p => ({
+      value: p.id,
+      label: p.category?.name ? `${p.name} · ${p.category.name}` : p.name
+    }))
+})
+
 const loadData = async () => {
   pending.value = true
   try {
-    const [m_data, s_data, p_data] = await Promise.all([
+    const [m_data, s_data, catalog, global] = await Promise.all([
       fetchMachine(machineId),
       fetchSlotsForMachine(machineId),
+      fetchMachineCatalog(machineId),
       fetchProducts()
     ])
     machine.value = m_data
     slots.value = s_data
-    products.value = p_data
+    machineCatalog.value = catalog
+    allProducts.value = global
+    productToAddId.value = undefined
     tempCash.value = Number(m_data.cash_collected) || 0
     tempRows.value = m_data.rows || 1
     tempCols.value = m_data.columns || 1
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error(e)
-    error.value = e
+    error.value = e instanceof Error ? e : new Error(String(e))
   } finally {
     pending.value = false
+  }
+}
+
+const handleAddCatalogProduct = async () => {
+  if (!productToAddId.value) return
+  isAddingCatalogProduct.value = true
+  try {
+    await addMachineProduct(machineId, productToAddId.value)
+    machineCatalog.value = await fetchMachineCatalog(machineId)
+    productToAddId.value = undefined
+    toast.add({ title: 'Producto añadido al catálogo de la máquina', color: 'success', icon: 'lucide:check' })
+  } catch (e: unknown) {
+    console.error(e)
+    toast.add({ title: 'No se pudo añadir', description: e instanceof Error ? e.message : undefined, color: 'error', icon: 'lucide:x' })
+  } finally {
+    isAddingCatalogProduct.value = false
+  }
+}
+
+const handleSyncCatalog = async () => {
+  isSyncingCatalog.value = true
+  try {
+    const n = await syncAllProductsToMachine(machineId)
+    machineCatalog.value = await fetchMachineCatalog(machineId)
+    if (n === 0) {
+      toast.add({ title: 'Todo el catálogo global ya estaba en esta máquina', color: 'neutral', icon: 'lucide:info' })
+    } else {
+      toast.add({ title: `Se añadieron ${n} producto(s) al catálogo de la máquina`, color: 'success', icon: 'lucide:check' })
+    }
+  } catch (e: unknown) {
+    console.error(e)
+    toast.add({ title: 'No se pudo importar', color: 'error', icon: 'lucide:x' })
+  } finally {
+    isSyncingCatalog.value = false
+  }
+}
+
+const handleRemoveCatalogProduct = async (p: Product) => {
+  removingCatalogProductId.value = p.id
+  try {
+    await removeMachineProduct(machineId, p.id)
+    machineCatalog.value = machineCatalog.value.filter(x => x.id !== p.id)
+    toast.add({ title: 'Producto quitado del catálogo de la máquina', color: 'success', icon: 'lucide:check' })
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : 'No se pudo quitar'
+    toast.add({ title: 'No se pudo quitar', description: msg, color: 'error', icon: 'lucide:x' })
+  } finally {
+    removingCatalogProductId.value = null
   }
 }
 
@@ -406,13 +575,24 @@ const handleUpdateQty = async (id: string, newQty: number, prevQty: number) => {
 }
 
 const handleUpdateProduct = async (id: string, productId: string | null) => {
+  if (productId && !catalogIds.value.has(productId)) {
+    toast.add({
+      title: 'Producto no disponible en esta máquina',
+      description: 'Añádelo primero al catálogo de la máquina arriba.',
+      color: 'warning',
+      icon: 'lucide:alert-triangle'
+    })
+    return
+  }
   try {
     await updateSlotProduct(id, productId)
     const idx = slots.value.findIndex(s => s.id === id)
     const slot = idx > -1 ? slots.value[idx] : undefined
     if (slot) {
       slot.product_id = productId
-      slot.product = products.value.find(p => p.id === productId) || null
+      slot.product = productId
+        ? machineCatalog.value.find(pr => pr.id === productId) || null
+        : null
     }
   } catch (err) {
     console.error('Error updating product:', err)

@@ -94,8 +94,9 @@ const tempExt = ref<Record<string, { productId: string, maxQty: number }>>({})
 
 const productOptions = computed(() => {
   const opts = [{ label: 'Vacío', value: '' }]
-  props.products.forEach(p => {
-    opts.push({ label: p.name, value: p.id })
+  props.products.forEach((p) => {
+    const tag = p.category?.name ? ` · ${p.category.name}` : ''
+    opts.push({ label: `${p.name}${tag}`, value: p.id })
   })
   return opts
 })
