@@ -77,6 +77,7 @@
 
 <script setup lang="ts">
 import type { Slot, Product } from '~/types'
+import { COMBO_EMPTY_VALUE, comboToNull, nullToCombo } from '~/utils/comboSentinel'
 
 const props = defineProps<{
   slots: Slot[],
@@ -97,7 +98,7 @@ const tempExt = ref<Record<string, { productId: string, maxQty: number }>>({})
 
 const productMenuItems = computed(() => {
   const rows: { label: string, value: string, description?: string }[] = [
-    { label: 'Vacío', value: '', description: 'Sin producto asignado' }
+    { label: 'Vacío', value: COMBO_EMPTY_VALUE, description: 'Sin producto asignado' }
   ]
   for (const p of props.products) {
     const tag = p.category?.name ? ` · ${p.category.name}` : ''
@@ -131,14 +132,14 @@ const decSlot = (slot: Slot) => {
 const isExtEditing = (id: string) => extEditingFor.value === id
 
 const getTempExt = (id: string) => {
-  if (!tempExt.value[id]) tempExt.value[id] = { productId: '', maxQty: 0 }
+  if (!tempExt.value[id]) tempExt.value[id] = { productId: COMBO_EMPTY_VALUE, maxQty: 0 }
   return tempExt.value[id]
 }
 
 const startExtEditing = (slot: Slot) => {
   extEditingFor.value = slot.id
   const temp = getTempExt(slot.id)
-  temp.productId = slot.product_id || ''
+  temp.productId = nullToCombo(slot.product_id)
   temp.maxQty = slot.max_quantity
 }
 
@@ -155,8 +156,8 @@ const saveExt = async (slot: Slot) => {
     }
   }
 
-  if (data.productId !== (slot.product_id || '')) {
-    emit('update:product', slot.id, data.productId === '' ? null : data.productId)
+  if (data.productId !== nullToCombo(slot.product_id)) {
+    emit('update:product', slot.id, comboToNull(data.productId))
   }
   
   isSavingExt.value = false

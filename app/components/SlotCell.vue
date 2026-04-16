@@ -61,6 +61,7 @@
 
 <script setup lang="ts">
 import type { Slot, Product } from '~/types'
+import { COMBO_EMPTY_VALUE, comboToNull, nullToCombo } from '~/utils/comboSentinel'
 
 const props = defineProps<{
   slot: Slot,
@@ -79,7 +80,7 @@ const isEditing = ref(false)
 const isSaving = ref(false)
 
 const tempQuantity = ref(props.slot.quantity)
-const tempProductId = ref(props.slot.product_id || '')
+const tempProductId = ref(nullToCombo(props.slot.product_id))
 const tempMax = ref(props.slot.max_quantity)
 
 const statusColor = computed(() => {
@@ -91,7 +92,7 @@ const statusColor = computed(() => {
 /** Items para USelectMenu v4: `items` + búsqueda en label/description (nombre, categoría, SKU) */
 const productMenuItems = computed(() => {
   const rows: { label: string, value: string, description?: string }[] = [
-    { label: 'Vacío', value: '', description: 'Sin producto asignado' }
+    { label: 'Vacío', value: COMBO_EMPTY_VALUE, description: 'Sin producto asignado' }
   ]
   for (const p of props.products) {
     const tag = p.category?.name ? ` · ${p.category.name}` : ''
@@ -109,7 +110,7 @@ const startEditing = () => {
   isEditing.value = true
   tempQuantity.value = props.slot.quantity
   tempMax.value = props.slot.max_quantity
-  tempProductId.value = props.slot.product_id || ''
+  tempProductId.value = nullToCombo(props.slot.product_id)
 }
 
 const cancel = () => {
@@ -132,8 +133,8 @@ const saveValue = async () => {
     }
   }
 
-  if (tempProductId.value !== (props.slot.product_id || '')) {
-    emit('update:product', props.slot.id, tempProductId.value === '' ? null : tempProductId.value)
+  if (tempProductId.value !== nullToCombo(props.slot.product_id)) {
+    emit('update:product', props.slot.id, comboToNull(tempProductId.value))
   }
 
   if (tempQuantity.value !== props.slot.quantity) {
@@ -148,7 +149,7 @@ watch(() => props.slot.quantity, (newVal) => {
   if (!isEditing.value) tempQuantity.value = newVal
 })
 watch(() => props.slot.product_id, (newVal) => {
-  if (!isEditing.value) tempProductId.value = newVal || ''
+  if (!isEditing.value) tempProductId.value = nullToCombo(newVal)
 })
 watch(() => props.slot.max_quantity, (newVal) => {
   if (!isEditing.value) tempMax.value = newVal

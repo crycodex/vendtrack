@@ -286,6 +286,7 @@
 
 <script setup lang="ts">
 import type { Product, Category } from '~/types'
+import { COMBO_EMPTY_VALUE, comboToNull, nullToCombo } from '~/utils/comboSentinel'
 
 const { fetchProducts, fetchCategories, createCategory, createProduct, updateProduct, deleteProduct } = useVendTrack()
 const toast = useToast()
@@ -309,15 +310,15 @@ const isDeleting = ref(false)
 const form = ref({
   name: '',
   sku: '',
-  /** Vacío = sin categoría */
-  category_id: '' as string,
+  /** Centinela = sin categoría (no usar '' — Reka ComboboxItem) */
+  category_id: COMBO_EMPTY_VALUE,
   purchase_price: 0,
   sale_price: 0,
   default_max: 10
 })
 
 const categorySelectOptions = computed(() => {
-  const base = [{ label: 'Sin categoría', value: '' }]
+  const base = [{ label: 'Sin categoría', value: COMBO_EMPTY_VALUE }]
   return base.concat(
     categories.value.map(c => ({ label: c.name, value: c.id }))
   )
@@ -333,11 +334,13 @@ const upsertProduct = (p: Product) => {
 }
 
 const getErrorMessage = (err: unknown) => {
-  if (err && typeof err === 'object' && 'message' in err) {
-    const msg = (err as { message?: unknown }).message
-    if (typeof msg === 'string' && msg.trim()) return msg
-  }
-  return null
+  if (!err || typeof err !== 'object') return null
+  const o = err as { message?: unknown, details?: unknown, hint?: unknown, code?: unknown }
+  const msg = typeof o.message === 'string' ? o.message.trim() : ''
+  if (!msg) return null
+  const details = typeof o.details === 'string' && o.details.trim() ? ` — ${o.details.trim()}` : ''
+  const hint = typeof o.hint === 'string' && o.hint.trim() ? ` (${o.hint.trim()})` : ''
+  return `${msg}${details}${hint}`
 }
 
 const loadProducts = async () => {
@@ -369,7 +372,7 @@ const openModal = (product?: Product) => {
     form.value = {
       name: product.name,
       sku: product.sku,
-      category_id: product.category_id || '',
+      category_id: nullToCombo(product.category_id),
       purchase_price: product.purchase_price || 0,
       sale_price: product.sale_price || 0,
       default_max: product.default_max || 10
@@ -378,7 +381,7 @@ const openModal = (product?: Product) => {
     form.value = {
       name: '',
       sku: '',
-      category_id: '',
+      category_id: COMBO_EMPTY_VALUE,
       purchase_price: 0,
       sale_price: 0,
       default_max: 10
@@ -393,7 +396,7 @@ const saveProduct = async () => {
   const payload = {
     name: form.value.name,
     sku: form.value.sku,
-    category_id: form.value.category_id ? form.value.category_id : null,
+    category_id: comboToNull(form.value.category_id),
     purchase_price: Number(form.value.purchase_price) || 0,
     sale_price: Number(form.value.sale_price) || 0,
     default_max: Number(form.value.default_max) || 1
