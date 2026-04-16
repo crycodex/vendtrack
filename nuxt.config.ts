@@ -1,4 +1,4 @@
-import { defineNuxtConfig } from "nuxt/config";
+import { defineNuxtConfig } from 'nuxt/config'
 
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
@@ -14,8 +14,12 @@ export default defineNuxtConfig({
 
   css: ['~/assets/css/main.css'],
 
-  supabase: {
-    redirect: false
+  /** Alinea Nuxt UI (inputs, selects, modales) con el layout claro de la app */
+  colorMode: {
+    preference: 'light',
+    fallback: 'light',
+    classSuffix: '',
+    storageKey: 'vendtrack-color-mode'
   },
 
   routeRules: {
@@ -31,5 +35,9 @@ export default defineNuxtConfig({
         braceStyle: '1tbs'
       }
     }
+  },
+
+  supabase: {
+    redirect: false
   }
 })

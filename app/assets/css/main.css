@@ -1,6 +1,11 @@
 @import "tailwindcss";
 @import "@nuxt/ui";
 
+/* Formularios nativos y scrollbars coherentes con tema claro */
+:root {
+  color-scheme: light;
+}
+
 @theme static {
   --font-sans: 'Public Sans', sans-serif;
 
