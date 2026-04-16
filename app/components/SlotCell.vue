@@ -12,10 +12,18 @@
     </div>
 
     <template v-if="!isEditing">
-      <div class="text-center w-full capitalize font-medium text-sm text-gray-800 line-clamp-2 leading-tight mt-2 mb-2">
-        {{ slot.product?.name || 'Vacío' }}
+      <div class="flex flex-col items-center justify-center w-full flex-1 min-h-0 mt-1 mb-1 px-0.5 gap-1">
+        <span
+          v-if="slot.product?.category?.emoji"
+          class="text-[1.65rem] sm:text-[1.85rem] leading-none select-none drop-shadow-sm"
+          :title="slot.product?.category?.name || 'Categoría'"
+          aria-hidden="true"
+        >{{ slot.product.category.emoji }}</span>
+        <div class="text-center w-full font-medium text-xs sm:text-sm text-gray-800 line-clamp-2 leading-snug">
+          {{ slot.product?.name || 'Vacío' }}
+        </div>
       </div>
-      <div class="font-bold text-gray-900 mt-auto">
+      <div class="font-bold text-gray-900 mt-auto text-sm tabular-nums">
         {{ slot.quantity }} / {{ slot.max_quantity }}
       </div>
     </template>
