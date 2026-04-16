@@ -1,5 +1,13 @@
 import { defineNuxtConfig } from 'nuxt/config'
 
+/** Coincide con @nuxtjs/supabase: NUXT_PUBLIC_* es lo recomendado; el módulo solo inyecta por defecto SUPABASE_URL / SUPABASE_KEY. */
+const supabaseUrl
+  = process.env.NUXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL
+const supabaseKey
+  = process.env.NUXT_PUBLIC_SUPABASE_KEY
+    || process.env.SUPABASE_KEY
+    || process.env.SUPABASE_ANON_KEY
+
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   modules: [
@@ -38,6 +46,8 @@ export default defineNuxtConfig({
   },
 
   supabase: {
-    redirect: false
+    redirect: false,
+    url: supabaseUrl,
+    key: supabaseKey
   }
 })
