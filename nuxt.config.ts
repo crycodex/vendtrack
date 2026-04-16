@@ -36,6 +36,11 @@ export default defineNuxtConfig({
 
   compatibilityDate: '2025-01-15',
 
+  /** Salida y rutas alineadas con Vercel (evita desajustes con el preset por defecto local). */
+  nitro: {
+    preset: 'vercel'
+  },
+
   eslint: {
     config: {
       stylistic: {
