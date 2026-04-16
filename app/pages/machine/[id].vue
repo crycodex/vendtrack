@@ -38,9 +38,10 @@
             v-if="machine.type === 'vending'"
             color="secondary"
             icon="lucide:package-plus"
+            :disabled="!hasAnyProductSlots"
             @click="isRefillModalOpen = true"
           >
-            Rellenar Todo
+            Rellenar todo
           </UButton>
           <UButton 
             color="neutral"
@@ -56,6 +57,19 @@
       <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
         <!-- Main Area: Grid & Local Inventory -->
         <div class="lg:col-span-3 space-y-6">
+          <div class="max-w-xl">
+            <UInput
+              v-model="pageSearch"
+              icon="lucide:search"
+              placeholder="Buscar por nombre, SKU o categoría…"
+              size="md"
+              class="w-full"
+            />
+            <p v-if="pageSearch.trim()" class="text-xs text-gray-500 mt-1.5">
+              Mostrando coincidencias en el catálogo de la máquina y en el resumen de inventario inferior.
+            </p>
+          </div>
+
           <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
             <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-4">
               <div>
@@ -97,6 +111,9 @@
                 Usa «Importar todos» o el selector para añadir productos del catálogo global.
               </p>
             </div>
+            <div v-else-if="filteredMachineCatalog.length === 0" class="py-8 text-center text-gray-500 bg-gray-50 border border-dashed border-gray-200 rounded-xl text-sm">
+              Ningún producto coincide con «{{ pageSearch.trim() }}».
+            </div>
             <div v-else class="overflow-x-auto rounded-lg border border-gray-100">
               <table class="w-full text-left text-sm min-w-[520px]">
                 <thead>
@@ -116,7 +133,7 @@
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-50">
-                  <tr v-for="p in machineCatalog" :key="p.id" class="hover:bg-gray-50/80">
+                  <tr v-for="p in filteredMachineCatalog" :key="p.id" class="hover:bg-gray-50/80">
                     <td class="py-2.5 px-3 text-gray-600">
                       <span v-if="p.category?.name" class="text-xs font-medium px-2 py-0.5 rounded-md bg-gray-100">{{ p.category.name }}</span>
                       <span v-else class="text-gray-400">—</span>
@@ -199,13 +216,16 @@
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="inv in localInventory" :key="inv.id" class="border-b border-gray-50 last:border-0 hover:bg-gray-50">
+                <tr v-for="inv in filteredLocalInventory" :key="inv.id" class="border-b border-gray-50 last:border-0 hover:bg-gray-50">
                   <td class="py-3 px-4 font-medium text-gray-900">{{ inv.name }}</td>
                   <td class="py-3 px-4 text-gray-700">{{ inv.qty }} unidades</td>
                   <td class="py-3 px-4 text-gray-500">${{ (inv.qty * inv.purchase).toFixed(2) }}</td>
                 </tr>
                 <tr v-if="localInventory.length === 0">
                   <td colspan="3" class="py-6 text-center text-gray-500">No hay productos en esta máquina</td>
+                </tr>
+                <tr v-else-if="filteredLocalInventory.length === 0">
+                  <td colspan="3" class="py-6 text-center text-gray-500">Ningún producto en inventario coincide con la búsqueda.</td>
                 </tr>
               </tbody>
             </table>
@@ -257,7 +277,10 @@
           <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <UIcon name="lucide:package-plus" class="w-8 h-8 text-blue-600" />
           </div>
-          <p class="text-gray-500 mb-6 text-sm">Esta acción rellenará todas las ranuras al límite de su capacidad configurada. Esto genera un registro masivo en el historial.</p>
+          <p class="text-gray-500 mb-6 text-sm text-left max-w-md mx-auto">
+            Solo se actualizan ranuras que ya tienen un producto asignado: se llevan al máximo de su capacidad (<span class="font-medium text-gray-700">max_quantity</span>).
+            Las ranuras vacías no se modifican. Cada cambio queda registrado en el historial de stock.
+          </p>
           <div class="flex gap-3 justify-center">
             <UButton color="neutral" variant="soft" @click="isRefillModalOpen = false">Cancelar</UButton>
             <UButton color="info" :loading="isRefilling" @click="executeRefill">Sí, Rellenar Todo</UButton>
@@ -400,11 +423,39 @@ const isAddingSlot = ref(false)
 const isRefillModalOpen = ref(false)
 const isRefilling = ref(false)
 
+/** Búsqueda en tablas de catálogo e inventario de esta vista */
+const pageSearch = ref('')
+
 const isDeleteSlotModalOpen = ref(false)
 const slotToDeleteId = ref<string | null>(null)
 const isDeletingSlot = ref(false)
 
 const catalogIds = computed(() => new Set(machineCatalog.value.map(p => p.id)))
+
+const matchesPageSearch = (text: string) => {
+  const q = pageSearch.value.trim().toLowerCase()
+  if (!q) return true
+  return text.toLowerCase().includes(q)
+}
+
+const filteredMachineCatalog = computed(() => {
+  const list = machineCatalog.value
+  const q = pageSearch.value.trim()
+  if (!q) return list
+  return list.filter(p => {
+    const sku = p.sku ?? ''
+    const cat = p.category?.name ?? ''
+    return (
+      matchesPageSearch(p.name)
+      || matchesPageSearch(sku)
+      || matchesPageSearch(cat)
+    )
+  })
+})
+
+const hasAnyProductSlots = computed(() =>
+  slots.value.some(s => s.product_id != null)
+)
 
 const productsNotInMachineItems = computed(() => {
   return allProducts.value
@@ -502,6 +553,13 @@ const localInventory = computed(() => {
     }
   })
   return Object.values(map).sort((a,b) => b.qty - a.qty)
+})
+
+const filteredLocalInventory = computed(() => {
+  const list = localInventory.value
+  const q = pageSearch.value.trim()
+  if (!q) return list
+  return list.filter(inv => matchesPageSearch(inv.name))
 })
 
 const startEditingName = () => {
@@ -646,21 +704,33 @@ const performDeleteSlot = async () => {
 
 const executeRefill = async () => {
   isRefilling.value = true
-
-  // Optimistic UI update
-  slots.value.forEach(s => {
-    if (s.quantity < s.max_quantity) {
-      s.quantity = s.max_quantity
-    }
-  })
-
   try {
-    await refillAllSlots(machineId, slots.value)
+    const n = await refillAllSlots(machineId, slots.value)
     slots.value = await fetchSlotsForMachine(machineId)
     isRefillModalOpen.value = false
+    if (n === 0) {
+      toast.add({
+        title: 'Nada que rellenar',
+        description: 'Todas las ranuras con producto ya están llenas, o no hay productos asignados en la grilla.',
+        color: 'neutral',
+        icon: 'lucide:info'
+      })
+    } else {
+      toast.add({
+        title: 'Inventario actualizado',
+        description: `Se llevaron ${n} ranura(s) al máximo de su capacidad.`,
+        color: 'success',
+        icon: 'lucide:check'
+      })
+    }
   } catch (err) {
     console.error('Error refilling:', err)
     toast.add({ title: 'Hubo un error al rellenar', color: 'error', icon: 'lucide:x' })
+    try {
+      slots.value = await fetchSlotsForMachine(machineId)
+    } catch (e) {
+      console.error(e)
+    }
   } finally {
     isRefilling.value = false
   }

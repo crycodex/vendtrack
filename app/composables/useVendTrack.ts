@@ -65,12 +65,20 @@ export const useVendTrack = () => {
     if (logError) throw logError
   }
 
-  const refillAllSlots = async (machineId: string, slots: Slot[]) => {
-    for (const slot of slots) {
-      if (slot.quantity < slot.max_quantity) {
-        await updateSlotQuantity(slot.id, slot.max_quantity, slot.quantity)
-      }
-    }
+  /**
+   * Rellena al máximo solo ranuras con producto asignado (las vacías no se tocan).
+   * Devuelve cuántas ranuras se actualizaron.
+   */
+  const refillAllSlots = async (_machineId: string, slots: Slot[]) => {
+    const toFill = slots.filter(
+      s => s.product_id != null && s.quantity < s.max_quantity
+    )
+    await Promise.all(
+      toFill.map(slot =>
+        updateSlotQuantity(slot.id, slot.max_quantity, slot.quantity)
+      )
+    )
+    return toFill.length
   }
 
   const updateCashCollected = async (machineId: string, amount: number) => {

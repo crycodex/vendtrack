@@ -32,13 +32,34 @@
 
     <UTabs v-else :items="tabItems" class="w-full">
       <template #machines>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-6">
-          <MachineCard 
-            v-for="machine in machines" 
-            :key="machine.id"
-            :machine="machine"
-            :slots="slotsMap[machine.id] || []"
+        <div class="pt-6 space-y-4">
+          <UInput
+            v-model="machineSearch"
+            icon="lucide:search"
+            placeholder="Buscar máquina por nombre…"
+            size="md"
+            class="w-full max-w-md"
           />
+          <div v-if="machines.length === 0" class="py-12 text-center text-gray-500 bg-white rounded-xl border border-gray-100">
+            <UIcon name="lucide:cpu" class="w-10 h-10 text-gray-300 mx-auto mb-2" />
+            <p class="font-medium">
+              No hay máquinas registradas.
+            </p>
+          </div>
+          <div v-else-if="filteredMachines.length === 0" class="py-12 text-center text-gray-500 bg-white rounded-xl border border-gray-100">
+            <UIcon name="lucide:search-x" class="w-10 h-10 text-gray-300 mx-auto mb-2" />
+            <p class="font-medium">
+              Ninguna máquina coincide con «{{ machineSearch.trim() }}».
+            </p>
+          </div>
+          <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <MachineCard 
+              v-for="machine in filteredMachines" 
+              :key="machine.id"
+              :machine="machine"
+              :slots="slotsMap[machine.id] || []"
+            />
+          </div>
         </div>
       </template>
 
@@ -143,6 +164,7 @@ const toast = useToast()
 
 const pending = ref(true)
 const error = ref<Error | null>(null)
+const machineSearch = ref('')
 const machines = ref<Machine[]>([])
 const slotsMap = ref<Record<string, Slot[]>>({})
 const logs = ref<(StockLog & { slot?: { machine_id: string, product?: Product } })[]>([])
@@ -156,6 +178,12 @@ const tabItems = [
 
 const totalCash = computed(() => {
   return machines.value.reduce((acc, m) => acc + (Number(m.cash_collected) || 0), 0)
+})
+
+const filteredMachines = computed(() => {
+  const q = machineSearch.value.trim().toLowerCase()
+  if (!q) return machines.value
+  return machines.value.filter(m => m.name.toLowerCase().includes(q))
 })
 
 const globalInventory = computed(() => {

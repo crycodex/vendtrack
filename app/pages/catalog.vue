@@ -33,6 +33,18 @@
 
     <!-- Product Table -->
     <div v-else class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+      <div class="flex flex-col sm:flex-row sm:items-center gap-3 px-5 py-4 border-b border-gray-100 bg-gray-50/80">
+        <UInput
+          v-model="catalogSearch"
+          icon="lucide:search"
+          placeholder="Buscar por nombre, SKU o categoría…"
+          size="md"
+          class="w-full sm:max-w-md"
+        />
+        <span class="text-sm text-gray-500 shrink-0">
+          {{ filteredProducts.length }} de {{ products.length }} producto(s)
+        </span>
+      </div>
       <div class="overflow-x-auto">
         <table class="w-full text-left border-collapse min-w-[700px]">
           <thead>
@@ -61,7 +73,7 @@
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-50">
-            <tr v-for="product in products" :key="product.id" class="hover:bg-gray-50/50 transition-colors">
+            <tr v-for="product in filteredProducts" :key="product.id" class="hover:bg-gray-50/50 transition-colors">
               <td class="py-4 px-5">
                 <div class="flex items-center gap-3">
                   <div class="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center border border-gray-200">
@@ -101,6 +113,17 @@
                 </p>
                 <p class="text-sm text-gray-400 mt-1">
                   Presiona "Crear Producto" para empezar a nutrir tu base de datos.
+                </p>
+              </td>
+            </tr>
+            <tr v-else-if="filteredProducts.length === 0">
+              <td colspan="7" class="py-14 text-center text-gray-500">
+                <UIcon name="lucide:search-x" class="w-10 h-10 text-gray-300 mx-auto mb-2" />
+                <p class="font-medium">
+                  Ningún producto coincide con «{{ catalogSearch.trim() }}».
+                </p>
+                <p class="text-sm text-gray-400 mt-1">
+                  Prueba otro término o borra el filtro.
                 </p>
               </td>
             </tr>
@@ -294,6 +317,22 @@ const toast = useToast()
 const pending = ref(true)
 const products = ref<Product[]>([])
 const categories = ref<Category[]>([])
+const catalogSearch = ref('')
+
+const filteredProducts = computed(() => {
+  const q = catalogSearch.value.trim().toLowerCase()
+  if (!q) return products.value
+  return products.value.filter((p) => {
+    const name = p.name ?? ''
+    const sku = p.sku ?? ''
+    const cat = p.category?.name ?? ''
+    return (
+      name.toLowerCase().includes(q)
+      || sku.toLowerCase().includes(q)
+      || cat.toLowerCase().includes(q)
+    )
+  })
+})
 
 const isCategoryModalOpen = ref(false)
 const newCategoryName = ref('')
