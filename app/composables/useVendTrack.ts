@@ -85,6 +85,108 @@ export const useVendTrack = () => {
     return data as Product[]
   }
 
+  const updateMachineName = async (machineId: string, name: string) => {
+    const { error } = await supabase
+      .from('machines')
+      .update({ name })
+      .eq('id', machineId)
+    if (error) throw error
+  }
+
+  const updateSlotProduct = async (slotId: string, productId: string | null) => {
+    const { error } = await supabase
+      .from('slots')
+      .update({ product_id: productId })
+      .eq('id', slotId)
+    if (error) throw error
+  }
+
+  const createProduct = async (product: Partial<Product>) => {
+    const { data, error } = await supabase
+      .from('products')
+      .insert(product)
+      .select()
+      .single()
+    if (error) throw error
+    return data as Product
+  }
+
+  const updateProduct = async (id: string, product: Partial<Product>) => {
+    const { data, error } = await supabase
+      .from('products')
+      .update(product)
+      .eq('id', id)
+      .select()
+      .single()
+    if (error) throw error
+    return data as Product
+  }
+
+  const fetchStockLogs = async () => {
+    const { data, error } = await supabase
+      .from('stock_logs')
+      .select(`
+        *,
+        slot:slot_id (
+          machine_id,
+          product:product_id (*)
+        )
+      `)
+      .order('changed_at', { ascending: false })
+    if (error) throw error
+    return data as (StockLog & { slot?: { machine_id: string, product?: Product } })[]
+  }
+
+  const updateMachineDimensions = async (machineId: string, rows: number, cols: number, currentSlots: Slot[]) => {
+    const { error: machineErr } = await supabase
+      .from('machines')
+      .update({ rows, columns: cols })
+      .eq('id', machineId)
+    if (machineErr) throw machineErr
+
+    const slotsToDelete = currentSlots.filter(s => (s.row && s.row > rows) || (s.col && s.col > cols))
+    if (slotsToDelete.length > 0) {
+      const { error: delErr } = await supabase
+        .from('slots')
+        .delete()
+        .in('id', slotsToDelete.map(s => s.id))
+      if (delErr) throw delErr
+    }
+
+    const slotsToInsert = []
+    const existingCoordinates = new Set(currentSlots.map(s => `${s.row}-${s.col}`))
+
+    for (let r = 1; r <= rows; r++) {
+      for (let c = 1; c <= cols; c++) {
+        const coord = `${r}-${c}`
+        if (!existingCoordinates.has(coord)) {
+          slotsToInsert.push({
+            machine_id: machineId,
+            row: r,
+            col: c,
+            quantity: 0,
+            max_quantity: 10
+          })
+        }
+      }
+    }
+
+    if (slotsToInsert.length > 0) {
+      const { error: insErr } = await supabase
+        .from('slots')
+        .insert(slotsToInsert)
+      if (insErr) throw insErr
+    }
+  }
+
+  const updateSlotMaxQuantity = async (slotId: string, maxQty: number) => {
+    const { error } = await supabase
+      .from('slots')
+      .update({ max_quantity: maxQty })
+      .eq('id', slotId)
+    if (error) throw error
+  }
+
   return {
     fetchMachines,
     fetchMachine,
@@ -92,6 +194,13 @@ export const useVendTrack = () => {
     updateSlotQuantity,
     refillAllSlots,
     updateCashCollected,
-    fetchProducts
+    fetchProducts,
+    updateMachineName,
+    updateSlotProduct,
+    createProduct,
+    updateProduct,
+    fetchStockLogs,
+    updateMachineDimensions,
+    updateSlotMaxQuantity
   }
 }

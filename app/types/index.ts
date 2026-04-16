@@ -15,6 +15,8 @@ export interface Product {
   name: string
   sku: string
   default_max: number
+  purchase_price: number
+  sale_price: number
 }
 
 export interface Slot {

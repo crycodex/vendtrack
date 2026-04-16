@@ -8,22 +8,26 @@
         v-for="slot in sortedSlots" 
         :key="slot.id" 
         :slot="slot"
+        :products="products"
         @update:qty="onUpdateQty"
+        @update:product="onUpdateProduct"
       />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import type { Slot } from '~/types'
+import type { Slot, Product } from '~/types'
 
 const props = defineProps<{
   slots: Slot[],
-  columns: number
+  columns: number,
+  products: Product[]
 }>()
 
 const emit = defineEmits<{
   (e: 'update:qty', id: string, newQty: number, prevQty: number): void
+  (e: 'update:product', id: string, productId: string | null): void
 }>()
 
 const sortedSlots = computed(() => {
@@ -35,5 +39,9 @@ const sortedSlots = computed(() => {
 
 const onUpdateQty = (id: string, newQty: number, prevQty: number) => {
   emit('update:qty', id, newQty, prevQty)
+}
+
+const onUpdateProduct = (id: string, productId: string | null) => {
+  emit('update:product', id, productId)
 }
 </script>
