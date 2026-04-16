@@ -11,7 +11,7 @@
           <h4 class="font-medium text-gray-900" v-if="!isExtEditing(slot.id)">{{ slot.product?.name || 'Desconocido' }}</h4>
           <USelectMenu 
             v-else
-            v-model="tempExt[slot.id].productId" 
+            v-model="getTempExt(slot.id).productId" 
             :options="productOptions"
             value-attribute="value"
             option-attribute="label"
@@ -24,7 +24,7 @@
             icon="lucide:pencil" 
             variant="ghost" 
             size="xs" 
-            color="gray"
+            color="neutral"
             @click="startExtEditing(slot)"
           />
           <template v-else>
@@ -32,14 +32,14 @@
               icon="lucide:x" 
               variant="ghost" 
               size="xs" 
-              color="gray"
+              color="neutral"
               @click="extEditingFor = null"
             />
             <UButton 
               icon="lucide:check" 
               variant="solid" 
               size="xs" 
-              color="black"
+              color="primary"
               :loading="isSavingExt"
               @click="saveExt(slot)"
             />
@@ -48,22 +48,22 @@
         
         <div class="flex items-center gap-2" v-if="isExtEditing(slot.id)">
           <span class="text-xs text-gray-500 font-medium">Límite / Capacidad Máxima:</span>
-          <UInput v-model.number="tempExt[slot.id].maxQty" type="number" min="1" size="xs" class="w-20" />
+          <UInput v-model.number="getTempExt(slot.id).maxQty" type="number" min="1" size="xs" class="w-20" />
         </div>
         <span v-else class="text-sm text-gray-500">Capacidad Máxima: {{ slot.max_quantity }}</span>
       </div>
       
       <div class="flex items-center gap-3 ml-auto">
         <div class="flex items-center bg-white border border-gray-200 rounded-lg p-1.5 shadow-sm">
-          <UButton icon="lucide:minus" size="sm" variant="ghost" color="gray" @click="decSlot(slot)" :disabled="slot.quantity <= 0" />
+          <UButton icon="lucide:minus" size="sm" variant="ghost" color="neutral" @click="decSlot(slot)" :disabled="slot.quantity <= 0" />
           <span class="font-bold text-lg w-12 text-center text-gray-900">{{ slot.quantity }}</span>
-          <UButton icon="lucide:plus" size="sm" variant="ghost" color="gray" @click="incSlot(slot)" :disabled="slot.quantity >= slot.max_quantity" />
+          <UButton icon="lucide:plus" size="sm" variant="ghost" color="neutral" @click="incSlot(slot)" :disabled="slot.quantity >= slot.max_quantity" />
         </div>
         <UButton 
           icon="lucide:trash-2" 
           size="sm" 
           variant="soft" 
-          color="red" 
+          color="error" 
           title="Eliminar este módulo"
           @click="emit('delete:slot', slot.id)" 
         />
@@ -87,6 +87,7 @@ const emit = defineEmits<{
 }>()
 
 const { updateSlotMaxQuantity } = useVendTrack()
+const toast = useToast()
 const extEditingFor = ref<string | null>(null)
 const isSavingExt = ref(false)
 const tempExt = ref<Record<string, { productId: string, maxQty: number }>>({})
@@ -119,17 +120,20 @@ const decSlot = (slot: Slot) => {
 
 const isExtEditing = (id: string) => extEditingFor.value === id
 
+const getTempExt = (id: string) => {
+  if (!tempExt.value[id]) tempExt.value[id] = { productId: '', maxQty: 0 }
+  return tempExt.value[id]
+}
+
 const startExtEditing = (slot: Slot) => {
   extEditingFor.value = slot.id
-  if (!tempExt.value[slot.id]) {
-    tempExt.value[slot.id] = { productId: '', maxQty: 0 }
-  }
-  tempExt.value[slot.id].productId = slot.product_id || ''
-  tempExt.value[slot.id].maxQty = slot.max_quantity
+  const temp = getTempExt(slot.id)
+  temp.productId = slot.product_id || ''
+  temp.maxQty = slot.max_quantity
 }
 
 const saveExt = async (slot: Slot) => {
-  const data = tempExt.value[slot.id]
+  const data = getTempExt(slot.id)
   isSavingExt.value = true
   
   if (data.maxQty !== slot.max_quantity) {
@@ -137,7 +141,7 @@ const saveExt = async (slot: Slot) => {
       await updateSlotMaxQuantity(slot.id, data.maxQty)
       slot.max_quantity = data.maxQty
     } catch(err) {
-      alert("Error actualizando capacidad de insumo")
+      toast.add({ title: 'Error actualizando capacidad', color: 'error', icon: 'lucide:x' })
     }
   }
 

@@ -139,6 +139,7 @@ import type { Machine, Slot, StockLog, Product } from '~/types'
 import { generateInventoryReport } from '~/utils/pdfReport'
 
 const { fetchMachines, fetchSlotsForMachine, fetchStockLogs } = useVendTrack()
+const toast = useToast()
 
 const pending = ref(true)
 const error = ref<Error | null>(null)
@@ -161,12 +162,10 @@ const globalInventory = computed(() => {
   const map: Record<string, { id: string, name: string, qty: number, totalCost: number, totalRevenue: number }> = {}
   Object.values(slotsMap.value).flat().forEach(s => {
     if (s.product_id && s.product) {
-      if (!map[s.product_id]) {
-        map[s.product_id] = { id: s.product_id, name: s.product.name, qty: 0, totalCost: 0, totalRevenue: 0 }
-      }
-      map[s.product_id].qty += s.quantity
-      map[s.product_id].totalCost += s.quantity * (Number(s.product.purchase_price) || 0)
-      map[s.product_id].totalRevenue += s.quantity * (Number(s.product.sale_price) || 0)
+      const entry = (map[s.product_id] ||= { id: s.product_id, name: s.product.name, qty: 0, totalCost: 0, totalRevenue: 0 })
+      entry.qty += s.quantity
+      entry.totalCost += s.quantity * (Number(s.product.purchase_price) || 0)
+      entry.totalRevenue += s.quantity * (Number(s.product.sale_price) || 0)
     }
   })
   return Object.values(map).sort((a,b) => b.qty - a.qty)
@@ -230,7 +229,7 @@ const generateGlobalReport = () => {
     generateInventoryReport(reportData)
   } catch (e) {
     console.error('Error generating PDF', e)
-    alert("Hubo un error al generar el PDF.")
+    toast.add({ title: 'Hubo un error al generar el PDF', color: 'error', icon: 'lucide:x' })
   } finally {
     isGeneratingReport.value = false
   }

@@ -21,12 +21,12 @@
           <div class="flex items-center gap-3 mb-1">
             <h1 v-if="!isEditingName" class="text-3xl font-bold text-gray-900 flex items-center gap-2">
               {{ machine.name }}
-              <UButton icon="lucide:edit-2" variant="ghost" color="gray" size="sm" @click="startEditingName" />
+              <UButton icon="lucide:edit-2" variant="ghost" color="neutral" size="sm" @click="startEditingName" />
             </h1>
             <div v-else class="flex items-center gap-2">
               <UInput v-model="tempName" class="font-bold text-xl" size="lg" @keydown.enter="saveName" />
-              <UButton icon="lucide:check" color="black" @click="saveName" />
-              <UButton icon="lucide:x" color="gray" variant="soft" @click="isEditingName = false" />
+              <UButton icon="lucide:check" color="primary" @click="saveName" />
+              <UButton icon="lucide:x" color="neutral" variant="soft" @click="isEditingName = false" />
             </div>
             <UIcon v-if="machine.type === 'vending'" name="lucide:box" class="w-6 h-6 text-blue-500" />
             <UIcon v-else name="lucide:coffee" class="w-6 h-6 text-orange-500" />
@@ -36,7 +36,7 @@
         <div class="flex items-center gap-3 mt-2 md:mt-0">
           <UButton 
             v-if="machine.type === 'vending'"
-            color="white"
+            color="secondary"
             icon="lucide:package-plus"
             @click="isRefillModalOpen = true"
           >
@@ -64,15 +64,15 @@
                 <div class="flex items-center gap-2 md:gap-4 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-200">
                    <div class="flex items-center gap-1.5">
                      <span class="text-xs font-semibold text-gray-500 uppercase tracking-wide">F</span>
-                     <UInput v-model.number="tempRows" type="number" min="1" size="2xs" class="w-14" :padded="false" input-class="text-center font-medium"/>
+                     <UInput v-model.number="tempRows" type="number" min="1" size="xs" class="w-14" :padded="false" input-class="text-center font-medium"/>
                    </div>
                    <UIcon name="lucide:x" class="w-3 h-3 text-gray-400" />
                    <div class="flex items-center gap-1.5">
                      <span class="text-xs font-semibold text-gray-500 uppercase tracking-wide">C</span>
-                     <UInput v-model.number="tempCols" type="number" min="1" size="2xs" class="w-14" :padded="false" input-class="text-center font-medium"/>
+                     <UInput v-model.number="tempCols" type="number" min="1" size="xs" class="w-14" :padded="false" input-class="text-center font-medium"/>
                    </div>
                    <div class="pl-2 border-l border-gray-200" v-if="hasDimensionChanges">
-                     <UButton icon="lucide:save" size="2xs" color="black" @click="saveDimensions" :loading="isSavingDimensions">Guardar</UButton>
+                     <UButton icon="lucide:save" size="xs" color="primary" @click="saveDimensions" :loading="isSavingDimensions">Guardar</UButton>
                    </div>
                 </div>
               </div>
@@ -87,7 +87,7 @@
             <div v-else>
               <div class="mb-4 flex items-center justify-between">
                 <h3 class="text-lg font-medium text-gray-900">Insumos</h3>
-                <UButton icon="lucide:plus" color="black" size="xs" :loading="isAddingSlot" @click="handleAddCoffeeSlot">Nuevo Módulo</UButton>
+                <UButton icon="lucide:plus" color="primary" size="xs" :loading="isAddingSlot" @click="handleAddCoffeeSlot">Nuevo Módulo</UButton>
               </div>
               <CoffeeList 
                 :slots="slots" 
@@ -144,7 +144,7 @@
               />
               <UButton 
                 block 
-                color="black"
+                color="primary"
                 @click="updateCash"
                 :loading="isUpdatingCash"
                 :disabled="tempCash === null || tempCash === Number(machine.cash_collected)"
@@ -157,12 +157,13 @@
       </div>
     </div>
 
-    <UModal v-model="isRefillModalOpen">
-      <UCard :ui="{ ring: '', divide: 'divide-y divide-gray-100' }">
+    <UModal v-model:open="isRefillModalOpen">
+      <template #content>
+      <UCard>
         <template #header>
           <div class="flex items-center justify-between">
             <h3 class="text-lg font-semibold text-gray-900">¿Rellenar Todo?</h3>
-            <UButton color="gray" variant="ghost" icon="lucide:x" class="-my-1" @click="isRefillModalOpen = false" />
+            <UButton color="neutral" variant="ghost" icon="lucide:x" class="-my-1" @click="isRefillModalOpen = false" />
           </div>
         </template>
         
@@ -172,11 +173,86 @@
           </div>
           <p class="text-gray-500 mb-6 text-sm">Esta acción rellenará todas las ranuras al límite de su capacidad configurada. Esto genera un registro masivo en el historial.</p>
           <div class="flex gap-3 justify-center">
-            <UButton color="gray" variant="soft" @click="isRefillModalOpen = false">Cancelar</UButton>
-            <UButton color="blue" :loading="isRefilling" @click="executeRefill">Sí, Rellenar Todo</UButton>
+            <UButton color="neutral" variant="soft" @click="isRefillModalOpen = false">Cancelar</UButton>
+            <UButton color="info" :loading="isRefilling" @click="executeRefill">Sí, Rellenar Todo</UButton>
           </div>
         </div>
       </UCard>
+      </template>
+    </UModal>
+
+    <!-- Confirm reduce dimensions -->
+    <UModal v-model:open="isReduceDimsModalOpen">
+      <template #content>
+      <UCard>
+        <template #header>
+          <div class="flex items-center justify-between">
+            <h3 class="text-lg font-semibold text-gray-900">Confirmar reducción</h3>
+            <UButton color="neutral" variant="ghost" icon="lucide:x" class="-my-1" @click="isReduceDimsModalOpen = false" />
+          </div>
+        </template>
+
+        <div class="p-4">
+          <div class="flex gap-4">
+            <div class="w-12 h-12 rounded-xl bg-red-50 border border-red-100 flex items-center justify-center shrink-0">
+              <UIcon name="lucide:alert-triangle" class="w-6 h-6 text-red-600" />
+            </div>
+            <div class="min-w-0">
+              <p class="font-semibold text-gray-900">Vas a reducir la cuadrícula.</p>
+              <p class="text-sm text-gray-500 mt-1">
+                Los productos en casillas que desaparezcan serán borrados de forma permanente.
+              </p>
+            </div>
+          </div>
+
+          <div class="pt-5 mt-6 border-t border-gray-100 flex justify-end gap-3">
+            <UButton color="neutral" variant="soft" @click="isReduceDimsModalOpen = false" :disabled="isSavingDimensions" size="lg" class="px-6">
+              Cancelar
+            </UButton>
+            <UButton color="error" @click="confirmReduceDims" :loading="isSavingDimensions" size="lg" class="px-8">
+              Sí, reducir
+            </UButton>
+          </div>
+        </div>
+      </UCard>
+      </template>
+    </UModal>
+
+    <!-- Confirm delete coffee slot -->
+    <UModal v-model:open="isDeleteSlotModalOpen">
+      <template #content>
+      <UCard>
+        <template #header>
+          <div class="flex items-center justify-between">
+            <h3 class="text-lg font-semibold text-gray-900">Quitar insumo</h3>
+            <UButton color="neutral" variant="ghost" icon="lucide:x" class="-my-1" @click="isDeleteSlotModalOpen = false" />
+          </div>
+        </template>
+
+        <div class="p-4">
+          <div class="flex gap-4">
+            <div class="w-12 h-12 rounded-xl bg-red-50 border border-red-100 flex items-center justify-center shrink-0">
+              <UIcon name="lucide:trash-2" class="w-6 h-6 text-red-600" />
+            </div>
+            <div class="min-w-0">
+              <p class="font-semibold text-gray-900">¿Quitar este conteo de insumo?</p>
+              <p class="text-sm text-gray-500 mt-1">
+                Se eliminará el módulo de la máquina. Esta acción no se puede deshacer.
+              </p>
+            </div>
+          </div>
+
+          <div class="pt-5 mt-6 border-t border-gray-100 flex justify-end gap-3">
+            <UButton color="neutral" variant="soft" @click="isDeleteSlotModalOpen = false" :disabled="isDeletingSlot" size="lg" class="px-6">
+              Cancelar
+            </UButton>
+            <UButton color="error" @click="performDeleteSlot" :loading="isDeletingSlot" size="lg" class="px-8">
+              Quitar
+            </UButton>
+          </div>
+        </div>
+      </UCard>
+      </template>
     </UModal>
 
   </div>
@@ -188,6 +264,7 @@ import { generateInventoryReport } from '~/utils/pdfReport'
 
 const route = useRoute()
 const { fetchMachine, fetchSlotsForMachine, updateSlotQuantity, refillAllSlots, updateCashCollected, fetchProducts, updateMachineName, updateSlotProduct, updateMachineDimensions, addCoffeeSlot, deleteSlot } = useVendTrack()
+const toast = useToast()
 
 const machineId = route.params.id as string
 const pending = ref(true)
@@ -206,10 +283,16 @@ const tempName = ref('')
 const tempRows = ref(1)
 const tempCols = ref(1)
 const isSavingDimensions = ref(false)
+const isReduceDimsModalOpen = ref(false)
+const pendingDims = ref<{ rows: number, cols: number } | null>(null)
 
 const isAddingSlot = ref(false)
 const isRefillModalOpen = ref(false)
 const isRefilling = ref(false)
+
+const isDeleteSlotModalOpen = ref(false)
+const slotToDeleteId = ref<string | null>(null)
+const isDeletingSlot = ref(false)
 
 const loadData = async () => {
   pending.value = true
@@ -241,10 +324,8 @@ const localInventory = computed(() => {
   const map: Record<string, { id: string, name: string, qty: number, purchase: number }> = {}
   slots.value.forEach(s => {
     if (s.product_id && s.product) {
-      if (!map[s.product_id]) {
-        map[s.product_id] = { id: s.product_id, name: s.product.name, qty: 0, purchase: s.product.purchase_price || 0 }
-      }
-      map[s.product_id].qty += s.quantity
+      const entry = (map[s.product_id] ||= { id: s.product_id, name: s.product.name, qty: 0, purchase: s.product.purchase_price || 0 })
+      entry.qty += s.quantity
     }
   })
   return Object.values(map).sort((a,b) => b.qty - a.qty)
@@ -264,7 +345,7 @@ const saveName = async () => {
     machine.value.name = tempName.value
     isEditingName.value = false
   } catch(err) {
-    alert("Error al actualizar nombre")
+    toast.add({ title: 'No se pudo actualizar el nombre', color: 'error', icon: 'lucide:x' })
   }
 }
 
@@ -276,17 +357,33 @@ const hasDimensionChanges = computed(() => {
 const saveDimensions = async () => {
   if (!machine.value) return
   if (tempRows.value < machine.value.rows! || tempCols.value < machine.value.columns!) {
-    if (!confirm('¿Estás seguro de reducir la cuadrícula? Los productos en casillas que desaparezcan serán borrados de forma permanente.')) return
+    pendingDims.value = { rows: tempRows.value, cols: tempCols.value }
+    isReduceDimsModalOpen.value = true
+    return
   }
+  await doSaveDimensions(tempRows.value, tempCols.value)
+}
+
+const confirmReduceDims = async () => {
+  if (!pendingDims.value) return
+  const { rows, cols } = pendingDims.value
+  pendingDims.value = null
+  isReduceDimsModalOpen.value = false
+  await doSaveDimensions(rows, cols)
+}
+
+const doSaveDimensions = async (rows: number, cols: number) => {
+  if (!machine.value) return
   isSavingDimensions.value = true
   try {
-    await updateMachineDimensions(machineId, tempRows.value, tempCols.value, slots.value)
-    machine.value.rows = tempRows.value
-    machine.value.columns = tempCols.value
+    await updateMachineDimensions(machineId, rows, cols, slots.value)
+    machine.value.rows = rows
+    machine.value.columns = cols
     slots.value = await fetchSlotsForMachine(machineId)
-  } catch(err) {
+    toast.add({ title: 'Dimensiones actualizadas', color: 'success', icon: 'lucide:check' })
+  } catch (err) {
     console.error(err)
-    alert("Error al actualizar dimensiones de la máquina.")
+    toast.add({ title: 'Error al actualizar dimensiones', color: 'error', icon: 'lucide:x' })
   } finally {
     isSavingDimensions.value = false
   }
@@ -294,16 +391,17 @@ const saveDimensions = async () => {
 
 const handleUpdateQty = async (id: string, newQty: number, prevQty: number) => {
   const idx = slots.value.findIndex(s => s.id === id)
-  if (idx > -1) {
-    slots.value[idx].quantity = newQty
+  const slot = idx > -1 ? slots.value[idx] : undefined
+  if (slot) {
+    slot.quantity = newQty
   }
 
   try {
     await updateSlotQuantity(id, newQty, prevQty)
   } catch (err) {
-    if (idx > -1) slots.value[idx].quantity = prevQty // revert
+    if (slot) slot.quantity = prevQty // revert
     console.error('Error updating quantity:', err)
-    alert("Error al actualizar inventario")
+    toast.add({ title: 'Error al actualizar inventario', color: 'error', icon: 'lucide:x' })
   }
 }
 
@@ -311,13 +409,14 @@ const handleUpdateProduct = async (id: string, productId: string | null) => {
   try {
     await updateSlotProduct(id, productId)
     const idx = slots.value.findIndex(s => s.id === id)
-    if (idx > -1) {
-      slots.value[idx].product_id = productId
-      slots.value[idx].product = products.value.find(p => p.id === productId) || null
+    const slot = idx > -1 ? slots.value[idx] : undefined
+    if (slot) {
+      slot.product_id = productId
+      slot.product = products.value.find(p => p.id === productId) || null
     }
   } catch (err) {
     console.error('Error updating product:', err)
-    alert("Error al cambiar producto")
+    toast.add({ title: 'Error al cambiar producto', color: 'error', icon: 'lucide:x' })
   }
 }
 
@@ -328,20 +427,36 @@ const handleAddCoffeeSlot = async () => {
     slots.value.push(newSlot)
   } catch(err) {
     console.error(err)
-    alert("Error creando insumo")
+    toast.add({ title: 'Error creando insumo', color: 'error', icon: 'lucide:x' })
   } finally {
     isAddingSlot.value = false
   }
 }
 
 const handleDeleteSlot = async (id: string) => {
-  if (!confirm('¿Estás seguro de quitar de la máquina este conteo de insumo?')) return
+  slotToDeleteId.value = id
+  isDeleteSlotModalOpen.value = true
+}
+
+const performDeleteSlot = async () => {
+  if (!slotToDeleteId.value) return
+  const id = slotToDeleteId.value
+  isDeletingSlot.value = true
+
+  const prev = [...slots.value]
+  slots.value = slots.value.filter(s => s.id !== id)
+
   try {
     await deleteSlot(id)
-    slots.value = slots.value.filter(s => s.id !== id)
+    toast.add({ title: 'Insumo quitado', color: 'success', icon: 'lucide:check' })
+    isDeleteSlotModalOpen.value = false
+    slotToDeleteId.value = null
   } catch (e) {
     console.error(e)
-    alert("Hubo un error borrando el insumo.")
+    slots.value = prev
+    toast.add({ title: 'Hubo un error borrando el insumo', color: 'error', icon: 'lucide:x' })
+  } finally {
+    isDeletingSlot.value = false
   }
 }
 
@@ -361,7 +476,7 @@ const executeRefill = async () => {
     isRefillModalOpen.value = false
   } catch (err) {
     console.error('Error refilling:', err)
-    alert('Hubo un error al rellenar las ranuras')
+    toast.add({ title: 'Hubo un error al rellenar', color: 'error', icon: 'lucide:x' })
   } finally {
     isRefilling.value = false
   }
@@ -377,7 +492,7 @@ const updateCash = async () => {
     }
   } catch (err) {
     console.error('Error updating cash:', err)
-    alert('No se pudo actualizar el efectivo')
+    toast.add({ title: 'No se pudo actualizar el efectivo', color: 'error', icon: 'lucide:x' })
   } finally {
     isUpdatingCash.value = false
   }
@@ -390,7 +505,7 @@ const generateReport = () => {
     generateInventoryReport([{ machine: machine.value, slots: slots.value }])
   } catch (e) {
     console.error('Error generating PDF', e)
-    alert("Hubo un error al generar el PDF.")
+    toast.add({ title: 'Hubo un error al generar el PDF', color: 'error', icon: 'lucide:x' })
   } finally {
     isGeneratingReport.value = false
   }

@@ -36,20 +36,20 @@
         <div class="flex flex-col items-center gap-1 bg-gray-50 p-2 rounded-md border border-gray-100">
            <span class="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Inventario</span>
            <div class="flex items-center gap-2">
-             <UButton icon="lucide:minus" size="2xs" variant="soft" color="gray" @click="dec" :disabled="tempQuantity <= 0" />
+             <UButton icon="lucide:minus" size="xs" variant="soft" color="neutral" @click="dec" :disabled="tempQuantity <= 0" />
              <span class="font-bold text-base w-6 text-center">{{ tempQuantity }}</span>
-             <UButton icon="lucide:plus" size="2xs" variant="soft" color="gray" @click="inc" :disabled="tempQuantity >= tempMax" />
+             <UButton icon="lucide:plus" size="xs" variant="soft" color="neutral" @click="inc" :disabled="tempQuantity >= tempMax" />
            </div>
         </div>
 
         <div class="flex items-center justify-between gap-2 px-1">
           <span class="text-xs text-gray-500 font-medium tracking-tight">Capacidad:</span>
-          <UInput v-model.number="tempMax" type="number" min="1" size="2xs" class="w-14" :padded="false" input-class="text-center" />
+          <UInput v-model.number="tempMax" type="number" min="1" size="xs" class="w-14" :padded="false" input-class="text-center" />
         </div>
 
         <div class="flex gap-2">
-           <UButton block label="Cancelar" size="xs" color="gray" variant="soft" class="flex-1" @click="cancel" />
-           <UButton block label="Guardar" size="xs" color="black" class="flex-1" @click="saveValue" :loading="isSaving" />
+           <UButton block label="Cancelar" size="xs" color="neutral" variant="soft" class="flex-1" @click="cancel" />
+           <UButton block label="Guardar" size="xs" color="primary" class="flex-1" @click="saveValue" :loading="isSaving" />
         </div>
       </div>
     </template>
@@ -70,6 +70,7 @@ const emit = defineEmits<{
 }>()
 
 const { updateSlotMaxQuantity } = useVendTrack()
+const toast = useToast()
 
 const isEditing = ref(false)
 const isSaving = ref(false)
@@ -116,7 +117,7 @@ const saveValue = async () => {
       // optimistic
       props.slot.max_quantity = tempMax.value
     } catch (e) {
-      alert("Error actualizando máxima capacidad")
+      toast.add({ title: 'Error actualizando máxima capacidad', color: 'error', icon: 'lucide:x' })
     }
   }
 
