@@ -9,10 +9,13 @@
       <div class="flex-1 w-full max-w-sm">
         <div class="flex items-center gap-2 mb-2">
           <h4 class="font-medium text-gray-900" v-if="!isExtEditing(slot.id)">{{ slot.product?.name || 'Desconocido' }}</h4>
-          <USelect 
+          <USelectMenu 
             v-else
             v-model="tempExt[slot.id].productId" 
             :options="productOptions"
+            value-attribute="value"
+            option-attribute="label"
+            placeholder="Asignar producto..."
             size="sm"
             class="flex-1"
           />

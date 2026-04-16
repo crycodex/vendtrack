@@ -111,6 +111,14 @@ export const useVendTrack = () => {
     return data as Product
   }
 
+  const deleteProduct = async (id: string) => {
+    const { error } = await supabase
+      .from('products')
+      .delete()
+      .eq('id', id)
+    if (error) throw error
+  }
+
   const updateProduct = async (id: string, product: Partial<Product>) => {
     const { data, error } = await supabase
       .from('products')
@@ -227,6 +235,7 @@ export const useVendTrack = () => {
     updateMachineName,
     updateSlotProduct,
     createProduct,
+    deleteProduct,
     updateProduct,
     fetchStockLogs,
     updateMachineDimensions,

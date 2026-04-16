@@ -23,11 +23,14 @@
     <template v-else>
       <div class="mt-4 w-full space-y-3" @click.stop>
         
-        <USelect 
+        <USelectMenu 
           v-model="tempProductId" 
           :options="productOptions"
-          size="2xs"
-          class="w-full"
+          value-attribute="value"
+          option-attribute="label"
+          placeholder="Asignar producto..."
+          size="sm"
+          class="w-full relative z-50"
         />
 
         <div class="flex flex-col items-center gap-1 bg-gray-50 p-2 rounded-md border border-gray-100">
