@@ -11,30 +11,47 @@
       </div>
       <div class="flex items-center space-x-4">
         <div class="bg-gray-100 rounded-lg px-4 py-2 text-right">
-          <p class="text-xs text-gray-500 font-medium uppercase tracking-wider mb-0.5">Total Efectivo Máquinas</p>
-          <p class="text-2xl font-bold text-gray-900">${{ totalCash.toFixed(2) }}</p>
+          <p class="text-xs text-gray-500 font-medium uppercase tracking-wider mb-0.5">
+            Total Efectivo Máquinas
+          </p>
+          <p class="text-2xl font-bold text-gray-900">
+            ${{ totalCash.toFixed(2) }}
+          </p>
         </div>
         <UButton
           color="neutral"
           size="lg"
           icon="lucide:file-text"
-          @click="generateGlobalReport"
           :loading="isGeneratingReport"
+          @click="generateGlobalReport"
         >
           Reporte de Inventario
         </UButton>
       </div>
     </div>
 
-    <div v-if="pending" class="flex justify-center py-12">
-      <UIcon name="lucide:loader-2" class="w-8 h-8 animate-spin text-gray-400" />
+    <div
+      v-if="pending"
+      class="flex justify-center py-12"
+    >
+      <UIcon
+        name="lucide:loader-2"
+        class="w-8 h-8 animate-spin text-gray-400"
+      />
     </div>
 
-    <div v-else-if="error" class="bg-red-50 text-red-600 p-4 rounded-xl mb-6">
+    <div
+      v-else-if="error"
+      class="bg-red-50 text-red-600 p-4 rounded-xl mb-6"
+    >
       No se pudo cargar la información. Revisa tu conexión a Supabase.
     </div>
 
-    <UTabs v-else :items="tabItems" class="w-full">
+    <UTabs
+      v-else
+      :items="tabItems"
+      class="w-full"
+    >
       <template #machines>
         <div class="pt-6 space-y-4">
           <UInput
@@ -44,21 +61,36 @@
             size="md"
             class="w-full max-w-md"
           />
-          <div v-if="machines.length === 0" class="py-12 text-center text-gray-500 bg-white rounded-xl border border-gray-100">
-            <UIcon name="lucide:cpu" class="w-10 h-10 text-gray-300 mx-auto mb-2" />
+          <div
+            v-if="machines.length === 0"
+            class="py-12 text-center text-gray-500 bg-white rounded-xl border border-gray-100"
+          >
+            <UIcon
+              name="lucide:cpu"
+              class="w-10 h-10 text-gray-300 mx-auto mb-2"
+            />
             <p class="font-medium">
               No hay máquinas registradas.
             </p>
           </div>
-          <div v-else-if="filteredMachines.length === 0" class="py-12 text-center text-gray-500 bg-white rounded-xl border border-gray-100">
-            <UIcon name="lucide:search-x" class="w-10 h-10 text-gray-300 mx-auto mb-2" />
+          <div
+            v-else-if="filteredMachines.length === 0"
+            class="py-12 text-center text-gray-500 bg-white rounded-xl border border-gray-100"
+          >
+            <UIcon
+              name="lucide:search-x"
+              class="w-10 h-10 text-gray-300 mx-auto mb-2"
+            />
             <p class="font-medium">
               Ninguna máquina coincide con «{{ machineSearch.trim() }}».
             </p>
           </div>
-          <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <MachineCard 
-              v-for="machine in filteredMachines" 
+          <div
+            v-else
+            class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+          >
+            <MachineCard
+              v-for="machine in filteredMachines"
               :key="machine.id"
               :machine="machine"
               :slots="slotsMap[machine.id] || []"
@@ -72,7 +104,10 @@
           <div class="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
             <div>
               <h2 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                <UIcon name="lucide:boxes" class="w-5 h-5 text-gray-400" />
+                <UIcon
+                  name="lucide:boxes"
+                  class="w-5 h-5 text-gray-400"
+                />
                 Inventario general
               </h2>
               <p class="text-sm text-gray-500 mt-1 max-w-xl">
@@ -169,7 +204,11 @@
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-50">
-                  <tr v-for="inv in filteredGlobalInventory" :key="inv.id" class="hover:bg-gray-50/80 transition-colors">
+                  <tr
+                    v-for="inv in filteredGlobalInventory"
+                    :key="inv.id"
+                    class="hover:bg-gray-50/80 transition-colors"
+                  >
                     <td class="py-3.5 px-5 font-medium text-gray-900">
                       {{ inv.name }}
                     </td>
@@ -187,17 +226,29 @@
                     </td>
                   </tr>
                   <tr v-if="globalInventory.length === 0">
-                    <td colspan="5" class="py-12 text-center text-gray-500">
-                      <UIcon name="lucide:package-open" class="w-10 h-10 text-gray-300 mx-auto mb-2" />
+                    <td
+                      colspan="5"
+                      class="py-12 text-center text-gray-500"
+                    >
+                      <UIcon
+                        name="lucide:package-open"
+                        class="w-10 h-10 text-gray-300 mx-auto mb-2"
+                      />
                       No hay inventario con producto asignado en las máquinas.
                     </td>
                   </tr>
                   <tr v-else-if="filteredGlobalInventory.length === 0">
-                    <td colspan="5" class="py-10 text-center text-gray-500">
+                    <td
+                      colspan="5"
+                      class="py-10 text-center text-gray-500"
+                    >
                       Ningún producto coincide con «{{ inventorySearch.trim() }}».
                     </td>
                   </tr>
-                  <tr v-if="globalInventory.length > 0" class="bg-gray-50/90 font-semibold border-t border-gray-200">
+                  <tr
+                    v-if="globalInventory.length > 0"
+                    class="bg-gray-50/90 font-semibold border-t border-gray-200"
+                  >
                     <td class="py-3.5 px-5 text-gray-700">
                       Totales (filtro)
                     </td>
@@ -226,7 +277,10 @@
           <div class="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
             <div>
               <h2 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                <UIcon name="lucide:pie-chart" class="w-5 h-5 text-gray-400" />
+                <UIcon
+                  name="lucide:pie-chart"
+                  class="w-5 h-5 text-gray-400"
+                />
                 Reporte de ganancias
               </h2>
               <p class="text-sm text-gray-500 mt-1 max-w-2xl">
@@ -253,7 +307,10 @@
                 Costo mercadería vendida
               </p>
               <p class="text-2xl font-bold text-gray-900 tabular-nums flex items-center gap-2">
-                <UIcon name="lucide:trending-down" class="text-rose-500 w-5 h-5 shrink-0" />
+                <UIcon
+                  name="lucide:trending-down"
+                  class="text-rose-500 w-5 h-5 shrink-0"
+                />
                 ${{ reportTotals.costs.toFixed(2) }}
               </p>
             </div>
@@ -262,7 +319,10 @@
                 Ingresos (ventas)
               </p>
               <p class="text-2xl font-bold text-gray-900 tabular-nums flex items-center gap-2">
-                <UIcon name="lucide:coins" class="text-emerald-600 w-5 h-5 shrink-0" />
+                <UIcon
+                  name="lucide:coins"
+                  class="text-emerald-600 w-5 h-5 shrink-0"
+                />
                 ${{ reportTotals.revenue.toFixed(2) }}
               </p>
             </div>
@@ -271,7 +331,10 @@
                 Ganancia neta
               </p>
               <p class="text-2xl font-bold text-amber-950 tabular-nums flex items-center gap-2">
-                <UIcon name="lucide:percent" class="text-amber-600 w-5 h-5 shrink-0" />
+                <UIcon
+                  name="lucide:percent"
+                  class="text-amber-600 w-5 h-5 shrink-0"
+                />
                 ${{ reportTotals.profit.toFixed(2) }}
               </p>
               <p class="text-xs text-amber-800/80 mt-1">
@@ -319,7 +382,11 @@
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-50">
-                  <tr v-for="log in filteredSalesLogs" :key="log.id" class="hover:bg-gray-50/80 transition-colors">
+                  <tr
+                    v-for="log in filteredSalesLogs"
+                    :key="log.id"
+                    class="hover:bg-gray-50/80 transition-colors"
+                  >
                     <td class="py-3.5 px-5 text-sm text-gray-600 whitespace-nowrap">
                       {{ formatLogDate(log.changed_at) }}
                     </td>
@@ -337,13 +404,22 @@
                     </td>
                   </tr>
                   <tr v-if="salesLogs.length === 0">
-                    <td colspan="5" class="py-12 text-center text-gray-500">
-                      <UIcon name="lucide:history" class="w-10 h-10 text-gray-300 mx-auto mb-2" />
+                    <td
+                      colspan="5"
+                      class="py-12 text-center text-gray-500"
+                    >
+                      <UIcon
+                        name="lucide:history"
+                        class="w-10 h-10 text-gray-300 mx-auto mb-2"
+                      />
                       Aún no hay ventas registradas (reducciones de stock).
                     </td>
                   </tr>
                   <tr v-else-if="filteredSalesLogs.length === 0">
-                    <td colspan="5" class="py-10 text-center text-gray-500">
+                    <td
+                      colspan="5"
+                      class="py-10 text-center text-gray-500"
+                    >
                       Ningún movimiento coincide con «{{ profitsSearch.trim() }}».
                     </td>
                   </tr>
@@ -398,7 +474,7 @@ const filteredMachines = computed(() => {
 
 const globalInventory = computed(() => {
   const map: Record<string, { id: string, name: string, qty: number, totalCost: number, totalRevenue: number }> = {}
-  Object.values(slotsMap.value).flat().forEach(s => {
+  Object.values(slotsMap.value).flat().forEach((s) => {
     if (s.product_id && s.product) {
       const entry = (map[s.product_id] ||= { id: s.product_id, name: s.product.name, qty: 0, totalCost: 0, totalRevenue: 0 })
       entry.qty += s.quantity
@@ -406,7 +482,7 @@ const globalInventory = computed(() => {
       entry.totalRevenue += s.quantity * (Number(s.product.sale_price) || 0)
     }
   })
-  return Object.values(map).sort((a,b) => b.qty - a.qty)
+  return Object.values(map).sort((a, b) => b.qty - a.qty)
 })
 
 const totalGlobalCost = computed(() => globalInventory.value.reduce((acc, inv) => acc + inv.totalCost, 0))
@@ -445,19 +521,19 @@ const machineById = computed(() =>
   Object.fromEntries(machines.value.map(m => [m.id, m.name]))
 )
 
-function machineName (id: string | undefined) {
+function machineName(id: string | undefined) {
   if (!id) return '—'
   return machineById.value[id] ?? '—'
 }
 
-function formatLogDate (iso: string) {
+function formatLogDate(iso: string) {
   return new Date(iso).toLocaleString('es', {
     dateStyle: 'short',
     timeStyle: 'short'
   })
 }
 
-function lineProfit (log: StockLog & { slot?: { machine_id: string, product?: Product } }) {
+function lineProfit(log: StockLog & { slot?: { machine_id: string, product?: Product } }) {
   const soldQty = log.prev_qty - log.new_qty
   const pur = Number(log.slot?.product?.purchase_price) || 0
   const sal = Number(log.slot?.product?.sale_price) || 0
@@ -484,7 +560,7 @@ const reportTotals = computed(() => {
   let costs = 0
   let revenue = 0
 
-  salesLogs.value.forEach(log => {
+  salesLogs.value.forEach((log) => {
     const soldQty = log.prev_qty - log.new_qty
     const purPrice = Number(log.slot?.product?.purchase_price) || 0
     const salPrice = Number(log.slot?.product?.sale_price) || 0
@@ -524,9 +600,9 @@ onMounted(async () => {
     for (const machine of machines.value) {
       slotsMap.value[machine.id] = await fetchSlotsForMachine(machine.id)
     }
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error(e)
-    error.value = e
+    error.value = e as Error
   } finally {
     pending.value = false
   }
