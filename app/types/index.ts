@@ -4,6 +4,8 @@ export interface Category {
   id: string
   name: string
   sort_order?: number
+  /** Emoji de icono (p. ej. 🥤); opcional */
+  emoji?: string | null
   created_at?: string
 }
 

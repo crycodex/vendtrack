@@ -1,8 +1,15 @@
--- Esquema de referencia VendTrack (alinear con migraciones en supabase/migrations/)
+-- Esquema de referencia VendTrack (alinear con supabase/migrations/).
+-- Idempotente: se puede ejecutar varias veces en local sin fallar si el tipo/tablas ya existen.
+-- En proyectos reales, la fuente de verdad son las migraciones; no sustituyen `db push`.
 
-CREATE TYPE machine_type AS ENUM ('vending', 'coffee');
+DO $$
+BEGIN
+  CREATE TYPE machine_type AS ENUM ('vending', 'coffee');
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;
 
-CREATE TABLE machines (
+CREATE TABLE IF NOT EXISTS machines (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name TEXT NOT NULL,
     type machine_type NOT NULL,
@@ -12,14 +19,15 @@ CREATE TABLE machines (
     created_at TIMESTAMPTZ DEFAULT now()
 );
 
-CREATE TABLE categories (
+CREATE TABLE IF NOT EXISTS categories (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name TEXT NOT NULL UNIQUE,
     sort_order INT NOT NULL DEFAULT 0,
+    emoji TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE TABLE products (
+CREATE TABLE IF NOT EXISTS products (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name TEXT NOT NULL,
     sku TEXT UNIQUE NOT NULL,
@@ -29,15 +37,14 @@ CREATE TABLE products (
     sale_price NUMERIC NOT NULL DEFAULT 0
 );
 
--- Qué productos puede usar cada máquina en sus ranuras (subset del catálogo global)
-CREATE TABLE machine_products (
+CREATE TABLE IF NOT EXISTS machine_products (
     machine_id UUID NOT NULL REFERENCES machines(id) ON DELETE CASCADE,
     product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     PRIMARY KEY (machine_id, product_id)
 );
 
-CREATE TABLE slots (
+CREATE TABLE IF NOT EXISTS slots (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     machine_id UUID REFERENCES machines(id) ON DELETE CASCADE,
     row INT,
@@ -47,7 +54,7 @@ CREATE TABLE slots (
     max_quantity INT DEFAULT 10
 );
 
-CREATE TABLE stock_logs (
+CREATE TABLE IF NOT EXISTS stock_logs (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     slot_id UUID REFERENCES slots(id) ON DELETE CASCADE,
     prev_qty INT NOT NULL,
@@ -55,4 +62,4 @@ CREATE TABLE stock_logs (
     changed_at TIMESTAMPTZ DEFAULT now()
 );
 
-CREATE INDEX idx_machine_products_product_id ON machine_products (product_id);
+CREATE INDEX IF NOT EXISTS idx_machine_products_product_id ON machine_products (product_id);

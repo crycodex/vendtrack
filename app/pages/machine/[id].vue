@@ -193,7 +193,10 @@
                 <tbody class="divide-y divide-gray-50">
                   <tr v-for="p in filteredMachineCatalog" :key="p.id" class="hover:bg-gray-50/80">
                     <td class="py-2.5 px-3 text-gray-600">
-                      <span v-if="p.category?.name" class="text-xs font-medium px-2 py-0.5 rounded-md bg-gray-100">{{ p.category.name }}</span>
+                      <span v-if="p.category?.name" class="text-xs font-medium px-2 py-0.5 rounded-md bg-gray-100 inline-flex items-center gap-1">
+                        <span v-if="p.category?.emoji">{{ p.category.emoji }}</span>
+                        {{ p.category.name }}
+                      </span>
                       <span v-else class="text-gray-400">—</span>
                     </td>
                     <td class="py-2.5 px-3 font-medium text-gray-900">
@@ -503,10 +506,12 @@ const filteredMachineCatalog = computed(() => {
   return list.filter(p => {
     const sku = p.sku ?? ''
     const cat = p.category?.name ?? ''
+    const em = p.category?.emoji ?? ''
     return (
       matchesPageSearch(p.name)
       || matchesPageSearch(sku)
       || matchesPageSearch(cat)
+      || matchesPageSearch(em)
     )
   })
 })
@@ -538,7 +543,9 @@ const productsNotInMachineItems = computed(() => {
     .filter(p => !catalogIds.value.has(p.id))
     .map(p => ({
       value: p.id,
-      label: p.category?.name ? `${p.name} · ${p.category.name}` : p.name,
+      label: p.category?.name
+        ? `${p.name} · ${p.category.emoji ? `${p.category.emoji} ` : ''}${p.category.name}`
+        : p.name,
       description: p.sku ? `SKU ${p.sku}` : undefined
     }))
 })

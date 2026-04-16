@@ -33,17 +33,28 @@
 
     <!-- Product Table -->
     <div v-else class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-      <div class="flex flex-col sm:flex-row sm:items-center gap-3 px-5 py-4 border-b border-gray-100 bg-gray-50/80">
-        <UInput
-          v-model="catalogSearch"
-          icon="lucide:search"
-          placeholder="Buscar por nombre, SKU o categoría…"
-          size="md"
-          class="w-full sm:max-w-md"
-        />
-        <span class="text-sm text-gray-500 shrink-0">
-          {{ filteredProducts.length }} de {{ products.length }} producto(s)
-        </span>
+      <div class="flex flex-col gap-3 px-5 py-4 border-b border-gray-100 bg-gray-50/80">
+        <div class="flex flex-col sm:flex-row sm:items-center gap-3 flex-wrap">
+          <UInput
+            v-model="catalogSearch"
+            icon="lucide:search"
+            placeholder="Buscar por nombre, SKU o categoría…"
+            size="md"
+            class="w-full sm:max-w-md"
+          />
+          <USelectMenu
+            v-model="filterCategoryEmoji"
+            :items="emojiFilterOptions"
+            value-key="value"
+            label-key="label"
+            placeholder="Filtrar por icono de categoría…"
+            size="md"
+            class="w-full sm:w-[min(100%,280px)]"
+          />
+          <span class="text-sm text-gray-500 shrink-0 sm:ml-auto">
+            {{ filteredProducts.length }} de {{ products.length }} producto(s)
+          </span>
+        </div>
       </div>
       <div class="overflow-x-auto">
         <table class="w-full text-left border-collapse min-w-[700px]">
@@ -86,7 +97,13 @@
                 {{ product.sku }}
               </td>
               <td class="py-4 px-5 text-sm text-gray-600">
-                <span v-if="product.category?.name" class="inline-flex items-center px-2 py-0.5 rounded-md bg-gray-100 text-xs font-medium">{{ product.category.name }}</span>
+                <span
+                  v-if="product.category?.name"
+                  class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-gray-100 text-xs font-medium"
+                >
+                  <span v-if="product.category?.emoji" class="text-base leading-none" aria-hidden="true">{{ product.category.emoji }}</span>
+                  <span>{{ product.category.name }}</span>
+                </span>
                 <span v-else class="text-gray-400">—</span>
               </td>
               <td class="py-4 px-5 text-sm font-medium text-gray-500">
@@ -288,7 +305,25 @@
               <UButton color="neutral" variant="ghost" icon="lucide:x" class="-my-1" @click="isCategoryModalOpen = false" />
             </div>
           </template>
-          <div class="p-4 space-y-4">
+          <div class="p-4 space-y-5">
+            <UFormField
+              label="Icono de categoría"
+              description="Sirve para reconocer y filtrar productos en esta tabla."
+            >
+              <div class="flex flex-wrap gap-2">
+                <button
+                  v-for="p in CATEGORY_EMOJI_PRESETS"
+                  :key="p.emoji"
+                  type="button"
+                  class="flex flex-col items-center justify-center gap-0.5 rounded-xl border px-2 py-2 min-w-[4.5rem] transition-colors hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                  :class="newCategoryEmoji === p.emoji ? 'border-primary bg-primary/5 ring-1 ring-primary' : 'border-gray-200 bg-white'"
+                  @click="newCategoryEmoji = p.emoji"
+                >
+                  <span class="text-2xl leading-none" aria-hidden="true">{{ p.emoji }}</span>
+                  <span class="text-[10px] text-gray-500 text-center leading-tight">{{ p.label }}</span>
+                </button>
+              </div>
+            </UFormField>
             <UFormField label="Nombre" required>
               <UInput v-model="newCategoryName" placeholder="Ej. Bebidas energéticas" size="lg" @keydown.enter.prevent="saveNewCategory" />
             </UFormField>
@@ -310,6 +345,7 @@
 <script setup lang="ts">
 import type { Product, Category } from '~/types'
 import { COMBO_EMPTY_VALUE, comboToNull, nullToCombo } from '~/utils/comboSentinel'
+import { CATEGORY_EMOJI_PRESETS, CATEGORY_EMOJI_FILTER_ALL } from '~/utils/categoryEmojiPresets'
 
 const { fetchProducts, fetchCategories, createCategory, createProduct, updateProduct, deleteProduct } = useVendTrack()
 const toast = useToast()
@@ -318,25 +354,52 @@ const pending = ref(true)
 const products = ref<Product[]>([])
 const categories = ref<Category[]>([])
 const catalogSearch = ref('')
+/** CATEGORY_EMOJI_FILTER_ALL = todas; resto = emoji exacto de categoría */
+const filterCategoryEmoji = ref(CATEGORY_EMOJI_FILTER_ALL)
+
+const emojiFilterOptions = computed(() => {
+  const base = [{ label: 'Todas las categorías', value: CATEGORY_EMOJI_FILTER_ALL }]
+  return base.concat(
+    CATEGORY_EMOJI_PRESETS.map(p => ({
+      label: `${p.emoji} ${p.label}`,
+      value: p.emoji
+    }))
+  )
+})
 
 const filteredProducts = computed(() => {
+  let list = products.value
+  const emojiF = filterCategoryEmoji.value
+  if (emojiF && emojiF !== CATEGORY_EMOJI_FILTER_ALL) {
+    list = list.filter(p => (p.category?.emoji || '') === emojiF)
+  }
   const q = catalogSearch.value.trim().toLowerCase()
-  if (!q) return products.value
-  return products.value.filter((p) => {
+  if (!q) return list
+  return list.filter((p) => {
     const name = p.name ?? ''
     const sku = p.sku ?? ''
     const cat = p.category?.name ?? ''
+    const catEmoji = p.category?.emoji ?? ''
     return (
       name.toLowerCase().includes(q)
       || sku.toLowerCase().includes(q)
       || cat.toLowerCase().includes(q)
+      || catEmoji.includes(q)
     )
   })
 })
 
 const isCategoryModalOpen = ref(false)
 const newCategoryName = ref('')
+const newCategoryEmoji = ref<string>(CATEGORY_EMOJI_PRESETS[0].emoji)
 const isSavingCategory = ref(false)
+
+watch(isCategoryModalOpen, (open) => {
+  if (open) {
+    newCategoryName.value = ''
+    newCategoryEmoji.value = CATEGORY_EMOJI_PRESETS[0].emoji
+  }
+})
 
 const isModalOpen = ref(false)
 const isSaving = ref(false)
@@ -359,7 +422,10 @@ const form = ref({
 const categorySelectOptions = computed(() => {
   const base = [{ label: 'Sin categoría', value: COMBO_EMPTY_VALUE }]
   return base.concat(
-    categories.value.map(c => ({ label: c.name, value: c.id }))
+    categories.value.map(c => ({
+      label: c.emoji ? `${c.emoji} ${c.name}` : c.name,
+      value: c.id
+    }))
   )
 })
 
@@ -517,7 +583,7 @@ const saveNewCategory = async () => {
   if (!name) return
   isSavingCategory.value = true
   try {
-    const created = await createCategory(name)
+    const created = await createCategory({ name, emoji: newCategoryEmoji.value })
     categories.value = [...categories.value, created].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0) || a.name.localeCompare(b.name))
     form.value.category_id = created.id
     newCategoryName.value = ''

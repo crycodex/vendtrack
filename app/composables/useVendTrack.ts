@@ -100,10 +100,28 @@ export const useVendTrack = () => {
     return data as Category[]
   }
 
-  const createCategory = async (name: string) => {
+  const createCategory = async (input: { name: string, emoji?: string | null }) => {
     const { data, error } = await supabase
       .from('categories')
-      .insert({ name: name.trim() })
+      .insert({
+        name: input.name.trim(),
+        emoji: input.emoji?.trim() || null
+      })
+      .select()
+      .single()
+
+    if (error) throw error
+    return data as Category
+  }
+
+  const updateCategory = async (id: string, patch: { name?: string, emoji?: string | null }) => {
+    const row: Record<string, unknown> = {}
+    if (patch.name !== undefined) row.name = patch.name.trim()
+    if (patch.emoji !== undefined) row.emoji = patch.emoji?.trim() || null
+    const { data, error } = await supabase
+      .from('categories')
+      .update(row)
+      .eq('id', id)
       .select()
       .single()
 
@@ -341,6 +359,7 @@ export const useVendTrack = () => {
     updateCashCollected,
     fetchCategories,
     createCategory,
+    updateCategory,
     fetchProducts,
     fetchMachineCatalog,
     addMachineProduct,

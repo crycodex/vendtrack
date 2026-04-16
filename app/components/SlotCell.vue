@@ -95,7 +95,9 @@ const productMenuItems = computed(() => {
     { label: 'Vacío', value: COMBO_EMPTY_VALUE, description: 'Sin producto asignado' }
   ]
   for (const p of props.products) {
-    const tag = p.category?.name ? ` · ${p.category.name}` : ''
+    const tag = p.category?.name
+      ? ` · ${p.category?.emoji ? `${p.category.emoji} ` : ''}${p.category.name}`
+      : ''
     rows.push({
       label: `${p.name}${tag}`,
       value: p.id,
